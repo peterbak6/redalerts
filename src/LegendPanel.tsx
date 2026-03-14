@@ -3,12 +3,12 @@ import { ALERT_COLORS } from "./constants";
 import { T, type Lang } from "./i18n";
 
 const SIZE_SAMPLES: { r: number; cx: number; label: string }[] = [
-  { r: 1.5, cx: 22, label: "1K" },
-  { r: 3.2, cx: 57, label: "10K" },
-  { r: 6, cx: 97, label: "50K" },
-  { r: 8.1, cx: 138, label: "100K" },
-  { r: 16.8, cx: 195, label: "500K" },
-  { r: 23.4, cx: 255, label: "1M" },
+  { r: 23.4, cx: 25, label: "1M" },
+  { r: 16.8, cx: 85, label: "500K" },
+  { r: 8.1, cx: 142, label: "100K" },
+  { r: 6, cx: 183, label: "50K" },
+  { r: 3.2, cx: 223, label: "10K" },
+  { r: 1.5, cx: 258, label: "1K" },
 ];
 
 interface LegendPanelProps {
@@ -38,8 +38,9 @@ const LegendPanel = memo(function LegendPanel({
 
   return (
     <div className="slider-panel" dir={s.dir}>
-      {/* ── Language toggle ── */}
+      {/* ── Header: title + language toggle ── */}
       <div className="panel-header">
+        <h1 className="panel-title">{s.title}</h1>
         <button
           className="lang-toggle"
           onClick={() => onLangChange(nextLang)}
@@ -53,7 +54,7 @@ const LegendPanel = memo(function LegendPanel({
       <p className="legend-desc">{s.sliderDesc}</p>
       <div className="slider-top">
         <button className="nav-btn" onClick={onPrev} disabled={dateIndex === 0}>
-          ←
+          {s.dir === "rtl" ? "→" : "←"}
         </button>
         <div className="date-info">
           <span className="date-label">{selectedDate}</span>
@@ -66,7 +67,7 @@ const LegendPanel = memo(function LegendPanel({
           onClick={onNext}
           disabled={dateIndex === dates.length - 1}
         >
-          →
+          {s.dir === "rtl" ? "←" : "→"}
         </button>
       </div>
       <input
@@ -104,7 +105,7 @@ const LegendPanel = memo(function LegendPanel({
       <svg
         viewBox="0 0 280 80"
         width="100%"
-        style={{ maxWidth: 280, display: "block" }}
+        style={{ display: "block" }}
         className="size-legend-svg"
         aria-hidden="true"
       >
@@ -131,6 +132,36 @@ const LegendPanel = memo(function LegendPanel({
         ))}
       </svg>
       <p className="legend-desc">{s.closingDesc}</p>
+
+      {/* ── Footer: data source ── */}
+      <div className="panel-divider" />
+      <a
+        className="data-source-link"
+        href="https://www.tzevaadom.co.il/static/historical/all.json"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {s.dataSource}
+      </a>
+      <a
+        className="data-source-link"
+        href="https://visualanalytics.co.il/redalerts"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        visualanalytics.co.il/redalerts
+      </a>
+      <p className="data-source-link" style={{ opacity: 0.25 }}>
+        © 2026 Peter Bak ·{" "}
+        <a
+          href="https://visualanalytics.co.il"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: "inherit", textDecoration: "underline" }}
+        >
+          VisualAnalytics
+        </a>
+      </p>
     </div>
   );
 });

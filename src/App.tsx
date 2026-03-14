@@ -11,9 +11,10 @@ import { T, type Lang } from "./i18n";
 // ─── Types ───────────────────────────────────────────────────────────────────
 type Alert = { cities: string[]; timestampIso: string };
 type DayData = { day: string; count: number; alerts: Alert[] };
-type CityInfo = { id: number; lat: number; lng: number };
+type CityInfo = { id: number; lat: number; lng: number; en?: string };
 type CityDot = {
   name: string;
+  englishName: string;
   position: [number, number];
   alertCount: number;
   population: number;
@@ -131,6 +132,7 @@ function App() {
       .filter(([name]) => !zoneAliases[name]) // skip non-representative zones
       .map(([name, info]) => ({
         name,
+        englishName: info.en ? info.en.split(" - ")[0] : name.split(" - ")[0],
         position: [info.lng, info.lat] as [number, number],
         alertCount: counts[name] ?? 0,
         population: populationRaw[String(info.id)] ?? 0,
@@ -199,22 +201,41 @@ function App() {
           const d = object as CityDot | null;
           if (!d?.name || d.alertCount <= 0) return null;
           const s = T[lang];
-          const MAX_TIMES = 20;
-          const shown = d.times.slice(0, MAX_TIMES);
-          const overflow = d.times.length - shown.length;
-          const timesLine =
-            shown.join(" · ") + (overflow > 0 ? ` +${overflow}` : "");
+
+          const cityName =
+            lang === "en" ? d.englishName : d.name.split(" - ")[0];
+          const MAX_TIMES = 15;
+          const shownTimes = d.times.slice(0, MAX_TIMES);
+          const overflow = d.times.length - shownTimes.length;
+
+          const timesHtml = d.times.length
+            ? `<div class="tt-divider"></div>
+               <p class="tt-row" style="opacity:0.45;margin-bottom:4px">${s.tooltipTimesTitle}</p>
+               <div class="tt-times-list">
+                 ${shownTimes.map((t) => `<span class="tt-time">${t}</span>`).join("")}
+                 ${overflow > 0 ? `<span class="tt-time">+${overflow}</span>` : ""}
+               </div>`
+            : "";
+
           return {
-            html: [
-              `<b>${d.name}</b>`,
-              d.population > 0 ? s.tooltipPopulation(d.population) : "",
-              s.tooltipAlerts(d.alertCount),
-              d.times.length
-                ? `<span style="opacity:0.6">${s.tooltipTimesTitle}</span> ${timesLine}`
-                : "",
-            ]
-              .filter(Boolean)
-              .join("<br/>"),
+            html: `<div class="tt" dir="${s.dir}">
+              <div class="tt-name">${cityName}</div>
+              ${d.population > 0 ? `<div class="tt-row">${s.tooltipPopulation(d.population)}</div>` : ""}
+              <div class="tt-row">${s.tooltipAlerts(d.alertCount)}</div>
+              ${timesHtml}
+            </div>`,
+            style: {
+              background: "rgba(8, 10, 22, 0.92)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: "12px",
+              padding: "12px 16px",
+              color: "#fff",
+              fontFamily:
+                "'Source Sans 3', 'Source Sans Pro', system-ui, sans-serif",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
+            },
           };
         }}
       >

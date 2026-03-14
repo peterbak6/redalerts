@@ -10,7 +10,7 @@ export const alertColor = (count: number): [number, number, number, number] => {
 
 export const radiusFromPopulation = (pop: number): number => {
   if (!pop || pop <= 0) return 1;
-  return Math.min(30, Math.max(1, Math.sqrt(pop / 2000)));
+  return Math.min(30, Math.max(1, Math.sqrt(pop / 1000)));
 };
 
 /**
