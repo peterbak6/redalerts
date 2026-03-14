@@ -76,8 +76,8 @@ html, body, #root {
   border-radius: 6px;
   cursor: pointer;
   width: 100%;
-  height: 22px;
-  font-size: var(--fs-title);
+  height: 28px;
+  font-size: var(--fs-section);
   line-height: 1;
   transition: background 0.15s;
   font-family: inherit;
@@ -121,7 +121,7 @@ html, body, #root {
   gap: 1px;
 }
 .date-label {
-  font-size: var(--fs-title);
+  font-size: var(--fs-section);
   font-weight: 600;
   letter-spacing: 0.04em;
 }

@@ -62,7 +62,7 @@ const LegendPanel = memo(function LegendPanel({
       <p className="legend-desc">{s.sliderDesc}</p>
       <div className="slider-top">
         <button className="nav-btn" onClick={onPrev} disabled={dateIndex === 0}>
-          ←
+          {s.prevArrow}
         </button>
         <div className="date-info">
           <span className="date-label">{selectedDate}</span>
@@ -75,7 +75,7 @@ const LegendPanel = memo(function LegendPanel({
           onClick={onNext}
           disabled={dateIndex === dates.length - 1}
         >
-          →
+          {s.nextArrow}
         </button>
       </div>
       <div className="slider-row">

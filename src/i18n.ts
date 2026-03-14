@@ -16,6 +16,8 @@ export interface Strings {
   tooltipTimesTitle: string;
   dataSource: string;
   playArrow: string;
+  prevArrow: string;
+  nextArrow: string;
 }
 
 export const T: Record<Lang, Strings> = {
@@ -24,7 +26,7 @@ export const T: Record<Lang, Strings> = {
     langToggleLabel: "EN",
     title: "התראות צבע אדום",
     sliderDesc:
-      "הזיזו את הסליידר כדי לעיין בהתראות לפי תאריך. כל עיגול מייצג עיר שבה הופעלה התראה.",
+      "הזיזו את הסליידר כדי לעיין בהתראות לפי תאריך. מוצגים רק תאריכים שעבורם קיים מידע. כל עיגול מייצג עיר שבה הופעלה התראה.",
     alerts: "התראות",
     alertFreqTitle: "תדירות התראות",
     alertFreqDesc:
@@ -39,13 +41,15 @@ export const T: Record<Lang, Strings> = {
     tooltipTimesTitle: "שעות",
     dataSource: "מקור: צבע אדום",
     playArrow: "◀", // triangle to the left
+    prevArrow: "→",
+    nextArrow: "←",
   },
   en: {
     dir: "ltr",
     title: "Red Alerts",
     langToggleLabel: "עב",
     sliderDesc:
-      "Move the slider to explore alerts by date. Each circle marks a city where an alert was triggered.",
+      "Move the slider to explore alerts by date. Only dates with available data are shown. Each circle marks a city where an alert was triggered.",
     alerts: "alerts",
     alertFreqTitle: "Alert frequency",
     alertFreqDesc:
@@ -60,5 +64,7 @@ export const T: Record<Lang, Strings> = {
     tooltipTimesTitle: "Times",
     dataSource: "Data source: Tzeva Adom",
     playArrow: "▶",
+    prevArrow: "←",
+    nextArrow: "→",
   },
 };
