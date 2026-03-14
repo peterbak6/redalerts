@@ -66,6 +66,10 @@ const LegendPanel = memo(function LegendPanel({
       {/* ── Color legend ── */}
       <div className="panel-divider" />
       <p className="legend-section-title">Alert frequency</p>
+      <p className="legend-desc">
+        Color shows daily alert count per city, indicating the number of times
+        the population had to go in shelters.
+      </p>
       <div className="legend">
         <span className="legend-label">1</span>
         {ALERT_COLORS.map((rgb, i) => (
@@ -80,14 +84,15 @@ const LegendPanel = memo(function LegendPanel({
           9+
         </span>
       </div>
-      <p className="legend-desc">
-        Color shows daily alert count per city, indicating the number of times
-        the population had to go in shelters.
-      </p>
 
       {/* ── Size legend ── */}
       <div className="panel-divider" />
       <p className="legend-section-title">Population size</p>
+      <p className="legend-desc">
+        Circle sizes show population size, indicating the number of people who
+        had to go in shelters due to an alert. Major cities are aggregated to
+        one location.
+      </p>
       <svg
         viewBox="0 0 280 80"
         width="100%"
@@ -118,9 +123,8 @@ const LegendPanel = memo(function LegendPanel({
         ))}
       </svg>
       <p className="legend-desc">
-        Circle sizes show population size, indicating the number of people who
-        had to go in shelters due to an alert. Major cities with multiple zones
-        show population on the center zone to avoid duplication.
+        As a result of this visualization you can feel the pain, when many
+        people are affected by many alerts.
       </p>
     </div>
   );

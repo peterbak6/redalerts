@@ -5,7 +5,7 @@ import { Map } from "@vis.gl/react-maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import LegendPanel from "./LegendPanel";
 import { BASE, MAP_STYLE, INITIAL_VIEW_STATE } from "./constants";
-import { alertColor, radiusFromPopulation } from "./utils";
+import { alertColor, radiusFromPopulation, buildZoneAliases } from "./utils";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type Alert = { cities: string[] };
@@ -82,21 +82,38 @@ function App() {
     [polygonsRaw],
   );
 
+  // ── Zone alias map (computed once: maps sub-zone names → representative zone) ──
+  const zoneAliases = useMemo(
+    () => buildZoneAliases(citiesRaw, populationRaw),
+    [citiesRaw, populationRaw],
+  );
+
   const cityDots = useMemo((): CityDot[] => {
     if (!dayData) return [];
-    const counts: Record<string, number> = {};
+
+    // Raw per-zone alert counts
+    const rawCounts: Record<string, number> = {};
     for (const alert of dayData.alerts)
-      for (const city of alert.cities) counts[city] = (counts[city] ?? 0) + 1;
+      for (const city of alert.cities)
+        rawCounts[city] = (rawCounts[city] ?? 0) + 1;
+
+    // Aggregate into representatives using MAX across zones
+    const counts: Record<string, number> = {};
+    for (const [name, count] of Object.entries(rawCounts)) {
+      const rep = zoneAliases[name] ?? name;
+      counts[rep] = Math.max(counts[rep] ?? 0, count);
+    }
 
     return Object.entries(citiesRaw)
+      .filter(([name]) => !zoneAliases[name]) // skip non-representative zones
       .map(([name, info]) => ({
         name,
         position: [info.lng, info.lat] as [number, number],
         alertCount: counts[name] ?? 0,
         population: populationRaw[String(info.id)] ?? 0,
       }))
-      .filter((d) => d.alertCount > 0); // only render cities with alerts
-  }, [citiesRaw, populationRaw, dayData]);
+      .filter((d) => d.alertCount > 0);
+  }, [citiesRaw, populationRaw, zoneAliases, dayData]);
 
   // ── DeckGL layers ──
   const layers = useMemo(

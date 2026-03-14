@@ -12,3 +12,39 @@ export const radiusFromPopulation = (pop: number): number => {
   if (!pop || pop <= 0) return 1;
   return Math.min(30, Math.max(1, Math.sqrt(pop / 2000)));
 };
+
+/**
+ * Detects multi-zone cities (names containing " - ") and returns a mapping
+ * from every non-representative zone name → representative zone name.
+ * The representative is the zone with the highest population.
+ * Single-zone cities are not included in the map.
+ */
+export function buildZoneAliases(
+  citiesRaw: Record<string, { id: number }>,
+  populationRaw: Record<string, number | null>,
+): Record<string, string> {
+  // Group all city names by their base name (part before first " - ")
+  const groups: Record<string, string[]> = {};
+  for (const name of Object.keys(citiesRaw)) {
+    const base = name.includes(" -") ? name.split(" -")[0] : name;
+    if (!groups[base]) groups[base] = [];
+    groups[base].push(name);
+  }
+
+  const aliases: Record<string, string> = {};
+  for (const members of Object.values(groups)) {
+    if (members.length <= 1) continue; // single-zone city, nothing to do
+
+    // Pick the zone with the highest population as the representative
+    const rep = members.reduce((best, name) => {
+      const bestPop = populationRaw[String(citiesRaw[best].id)] ?? 0;
+      const thisPop = populationRaw[String(citiesRaw[name].id)] ?? 0;
+      return thisPop > bestPop ? name : best;
+    });
+
+    for (const name of members) {
+      if (name !== rep) aliases[name] = rep;
+    }
+  }
+  return aliases;
+}
