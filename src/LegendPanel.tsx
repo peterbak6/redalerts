@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { ALERT_COLORS } from "./constants";
+import { T, type Lang } from "./i18n";
 
 const SIZE_SAMPLES: { r: number; cx: number; label: string }[] = [
   { r: 1.5, cx: 22, label: "1K" },
@@ -14,28 +15,42 @@ interface LegendPanelProps {
   dates: string[];
   dateIndex: number;
   totalAlerts: number;
+  lang: Lang;
   onPrev: () => void;
   onNext: () => void;
   onSliderChange: (index: number) => void;
+  onLangChange: (lang: Lang) => void;
 }
 
 const LegendPanel = memo(function LegendPanel({
   dates,
   dateIndex,
   totalAlerts,
+  lang,
   onPrev,
   onNext,
   onSliderChange,
+  onLangChange,
 }: LegendPanelProps) {
   const selectedDate = dates[dateIndex];
+  const s = T[lang];
+  const nextLang: Lang = lang === "he" ? "en" : "he";
 
   return (
-    <div className="slider-panel">
+    <div className="slider-panel" dir={s.dir}>
+      {/* ── Language toggle ── */}
+      <div className="panel-header">
+        <button
+          className="lang-toggle"
+          onClick={() => onLangChange(nextLang)}
+          title={lang === "he" ? "Switch to English" : "עבור לעברית"}
+        >
+          {s.langToggleLabel}
+        </button>
+      </div>
+
       {/* ── Date slider ── */}
-      <p className="legend-desc">
-        Move the slider to select specific dates. Alerts are shown as circles on
-        the map.
-      </p>
+      <p className="legend-desc">{s.sliderDesc}</p>
       <div className="slider-top">
         <button className="nav-btn" onClick={onPrev} disabled={dateIndex === 0}>
           ←
@@ -43,7 +58,7 @@ const LegendPanel = memo(function LegendPanel({
         <div className="date-info">
           <span className="date-label">{selectedDate}</span>
           <span className="alert-count">
-            {totalAlerts.toLocaleString()} alerts
+            {totalAlerts.toLocaleString()} {s.alerts}
           </span>
         </div>
         <button
@@ -65,11 +80,8 @@ const LegendPanel = memo(function LegendPanel({
 
       {/* ── Color legend ── */}
       <div className="panel-divider" />
-      <p className="legend-section-title">Alert frequency</p>
-      <p className="legend-desc">
-        Color shows daily alert count per city, indicating the number of times
-        the population had to go in shelters.
-      </p>
+      <p className="legend-section-title">{s.alertFreqTitle}</p>
+      <p className="legend-desc">{s.alertFreqDesc}</p>
       <div className="legend">
         <span className="legend-label">1</span>
         {ALERT_COLORS.map((rgb, i) => (
@@ -87,12 +99,8 @@ const LegendPanel = memo(function LegendPanel({
 
       {/* ── Size legend ── */}
       <div className="panel-divider" />
-      <p className="legend-section-title">Population size</p>
-      <p className="legend-desc">
-        Circle sizes show population size, indicating the number of people who
-        had to go in shelters due to an alert. Major cities are aggregated to
-        one location.
-      </p>
+      <p className="legend-section-title">{s.popSizeTitle}</p>
+      <p className="legend-desc">{s.popSizeDesc}</p>
       <svg
         viewBox="0 0 280 80"
         width="100%"
@@ -122,10 +130,7 @@ const LegendPanel = memo(function LegendPanel({
           </g>
         ))}
       </svg>
-      <p className="legend-desc">
-        As a result of this visualization you can feel the pain, when many
-        people are affected by many alerts.
-      </p>
+      <p className="legend-desc">{s.closingDesc}</p>
     </div>
   );
 });

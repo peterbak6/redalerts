@@ -6,9 +6,10 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import LegendPanel from "./LegendPanel";
 import { BASE, MAP_STYLE, INITIAL_VIEW_STATE } from "./constants";
 import { alertColor, radiusFromPopulation, buildZoneAliases } from "./utils";
+import { T, type Lang } from "./i18n";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type Alert = { cities: string[] };
+type Alert = { cities: string[]; timestampIso: string };
 type DayData = { day: string; count: number; alerts: Alert[] };
 type CityInfo = { id: number; lat: number; lng: number };
 type CityDot = {
@@ -16,6 +17,7 @@ type CityDot = {
   position: [number, number];
   alertCount: number;
   population: number;
+  times: string[];
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -38,6 +40,7 @@ function App() {
     Record<string, number | null>
   >({});
   const [booting, setBooting] = useState(true);
+  const [lang, setLang] = useState<Lang>("he");
 
   // Load static assets once
   useEffect(() => {
@@ -91,17 +94,37 @@ function App() {
   const cityDots = useMemo((): CityDot[] => {
     if (!dayData) return [];
 
-    // Raw per-zone alert counts
-    const rawCounts: Record<string, number> = {};
-    for (const alert of dayData.alerts)
-      for (const city of alert.cities)
-        rawCounts[city] = (rawCounts[city] ?? 0) + 1;
+    const timeFmt = new Intl.DateTimeFormat([], {
+      timeZone: "Asia/Jerusalem",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
 
-    // Aggregate into representatives using MAX across zones
+    // Raw per-zone alert counts and times
+    const rawCounts: Record<string, number> = {};
+    const rawTimes: Record<string, string[]> = {};
+    for (const alert of dayData.alerts) {
+      const t = timeFmt.format(new Date(alert.timestampIso));
+      for (const city of alert.cities) {
+        rawCounts[city] = (rawCounts[city] ?? 0) + 1;
+        if (!rawTimes[city]) rawTimes[city] = [];
+        rawTimes[city].push(t);
+      }
+    }
+
+    // Aggregate into representatives using MAX count; merge all times
     const counts: Record<string, number> = {};
+    const times: Record<string, string[]> = {};
     for (const [name, count] of Object.entries(rawCounts)) {
       const rep = zoneAliases[name] ?? name;
       counts[rep] = Math.max(counts[rep] ?? 0, count);
+      if (!times[rep]) times[rep] = [];
+      times[rep].push(...(rawTimes[name] ?? []));
+    }
+    // Sort and deduplicate times per city
+    for (const rep of Object.keys(times)) {
+      times[rep] = [...new Set(times[rep])].sort();
     }
 
     return Object.entries(citiesRaw)
@@ -111,6 +134,7 @@ function App() {
         position: [info.lng, info.lat] as [number, number],
         alertCount: counts[name] ?? 0,
         population: populationRaw[String(info.id)] ?? 0,
+        times: times[name] ?? [],
       }))
       .filter((d) => d.alertCount > 0);
   }, [citiesRaw, populationRaw, zoneAliases, dayData]);
@@ -158,9 +182,11 @@ function App() {
         dates={dates}
         dateIndex={dateIndex}
         totalAlerts={totalAlerts}
+        lang={lang}
         onPrev={prev}
         onNext={next}
         onSliderChange={setDateIndex}
+        onLangChange={setLang}
       />
 
       {/* ── Map ── */}
@@ -172,10 +198,23 @@ function App() {
         getTooltip={({ object }) => {
           const d = object as CityDot | null;
           if (!d?.name || d.alertCount <= 0) return null;
+          const s = T[lang];
+          const MAX_TIMES = 20;
+          const shown = d.times.slice(0, MAX_TIMES);
+          const overflow = d.times.length - shown.length;
+          const timesLine =
+            shown.join(" · ") + (overflow > 0 ? ` +${overflow}` : "");
           return {
-            html: `<b>${d.name}</b><br/>${d.alertCount} alert${
-              d.alertCount !== 1 ? "s" : ""
-            }`,
+            html: [
+              `<b>${d.name}</b>`,
+              d.population > 0 ? s.tooltipPopulation(d.population) : "",
+              s.tooltipAlerts(d.alertCount),
+              d.times.length
+                ? `<span style="opacity:0.6">${s.tooltipTimesTitle}</span> ${timesLine}`
+                : "",
+            ]
+              .filter(Boolean)
+              .join("<br/>"),
           };
         }}
       >
