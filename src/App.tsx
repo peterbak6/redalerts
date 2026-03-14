@@ -2,13 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import DeckGL from "@deck.gl/react";
 import { PolygonLayer, ScatterplotLayer } from "@deck.gl/layers";
 import { Map } from "@vis.gl/react-maplibre";
-import { setRTLTextPlugin } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-
-setRTLTextPlugin(
-  "https://unpkg.com/@mapbox/mapbox-gl-rtl-text@0.3.0/dist/mapbox-gl-rtl-text.js",
-  false,
-);
 import LegendPanel from "./LegendPanel";
 import { BASE, MAP_STYLE, INITIAL_VIEW_STATE } from "./constants";
 import { alertColor, radiusFromPopulation, buildZoneAliases } from "./utils";
