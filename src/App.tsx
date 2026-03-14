@@ -2,11 +2,18 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import DeckGL from "@deck.gl/react";
 import { PolygonLayer, ScatterplotLayer } from "@deck.gl/layers";
 import { Map } from "@vis.gl/react-maplibre";
+import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import LegendPanel from "./LegendPanel";
 import { BASE, MAP_STYLE, INITIAL_VIEW_STATE } from "./constants";
 import { alertColor, radiusFromPopulation, buildZoneAliases } from "./utils";
 import { T, type Lang } from "./i18n";
+
+// Serve the plugin from the same origin to avoid cross-origin Worker restrictions
+maplibregl.setRTLTextPlugin(
+  `${import.meta.env.BASE_URL}mapbox-gl-rtl-text.js`,
+  false,
+);
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type Alert = { cities: string[]; timestampIso: string };
