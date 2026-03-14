@@ -7,7 +7,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 // ─── Types ───────────────────────────────────────────────────────────────────
 type Alert = { cities: string[] };
 type DayData = { day: string; count: number; alerts: Alert[] };
-type CityInfo = { lat: number; lng: number; area?: number };
+type CityInfo = { id: number; lat: number; lng: number };
 type CityDot = {
   name: string;
   position: [number, number];
@@ -126,8 +126,7 @@ function App() {
         name,
         position: [info.lng, info.lat] as [number, number],
         alertCount: counts[name] ?? 0,
-        population:
-          info.area != null ? (populationRaw[String(info.area)] ?? 0) : 0,
+        population: populationRaw[String(info.id)] ?? 0,
       }))
       .filter((d) => d.alertCount > 0); // only render cities with alerts
   }, [citiesRaw, populationRaw, dayData]);
