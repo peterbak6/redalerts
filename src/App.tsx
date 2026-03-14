@@ -172,8 +172,13 @@ function App() {
 
   return (
     <div className="app">
-      {/* ── Date slider overlay ── */}
+      {/* ── Legend panel ── */}
       <div className="slider-panel">
+        {/* Date slider */}
+        <p className="legend-desc">
+          Move the slider to select specific dates. Alerts are shown as circles
+          on the map.
+        </p>
         <div className="slider-top">
           <button className="nav-btn" onClick={prev} disabled={dateIndex === 0}>
             ←
@@ -200,23 +205,76 @@ function App() {
           onChange={(e) => setDateIndex(Number(e.target.value))}
           className="date-range"
         />
-        {/* Color legend */}
+
+        {/* ── Color legend ── */}
+        <div className="panel-divider" />
+        <p className="legend-section-title">Alert frequency</p>
         <div className="legend">
+          <span className="legend-label">1</span>
           {ALERT_COLORS.map((rgb, i) => (
             <span
               key={i}
               className="legend-cell"
-              style={{
-                background: `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`,
-              }}
+              style={{ background: `rgb(${rgb[0]},${rgb[1]},${rgb[2]})` }}
               title={i < 8 ? String(i + 1) : "9+"}
             />
           ))}
-          <span className="legend-label">1</span>
           <span className="legend-label" style={{ marginLeft: "auto" }}>
             9+
           </span>
         </div>
+        <p className="legend-desc">
+          Color shows daily alert count per city, indicating the number of times
+          the population had to go in shelters.
+        </p>
+
+        {/* ── Size legend ── */}
+        <div className="panel-divider" />
+        <p className="legend-section-title">Population size</p>
+        <svg
+          viewBox="0 0 280 80"
+          width="100%"
+          style={{ maxWidth: 280, display: "block" }}
+          className="size-legend-svg"
+          aria-hidden="true"
+        >
+          {/* circles bottom-aligned at y=62; radii match radiusFromPopulation + radiusMinPixels=3 */}
+          {(
+            [
+              { r: 1.5, cx: 22, label: "1K" },
+              { r: 3.2, cx: 57, label: "10K" },
+              { r: 6, cx: 97, label: "50K" },
+              { r: 8.1, cx: 138, label: "100K" },
+              { r: 16.8, cx: 195, label: "500K" },
+              { r: 23.4, cx: 255, label: "1M" },
+            ] as { r: number; cx: number; label: string }[]
+          ).map(({ r, cx, label }) => (
+            <g key={cx}>
+              <circle
+                cx={cx}
+                cy={62 - r}
+                r={r}
+                fill="none"
+                stroke="rgba(255,255,255,0.55)"
+                strokeWidth={1}
+              />
+              <text
+                x={cx}
+                y={76}
+                textAnchor="middle"
+                fontSize="8"
+                fill="rgba(255,255,255,0.4)"
+              >
+                {label}
+              </text>
+            </g>
+          ))}
+        </svg>
+        <p className="legend-desc">
+          Circle sizes show population size, indicating the number of people who
+          had to go in shelters due to an alert. Major cities with multiple
+          zones show population on the center zone to avoid duplication.
+        </p>
       </div>
 
       {/* ── Map ── */}
