@@ -56,12 +56,35 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-width: 360px;
-  max-width: min(280px, calc(100vw - 32px));
+  min-width: 260px;
+  max-width: min(360px, calc(100vw - 32px));
   max-height: calc(100vh - 32px);
   overflow-y: auto;
   color: #fff;
   user-select: none;
+}
+
+.slider-panel--collapsed {
+  overflow: hidden;
+}
+
+/* ── Collapse toggle ── */
+.collapse-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.5);
+  border-radius: 6px;
+  cursor: pointer;
+  width: 100%;
+  height: 22px;
+  font-size: var(--fs-title);
+  line-height: 1;
+  transition: background 0.15s;
+  font-family: inherit;
+}
+.collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
 }
 
 .slider-top {

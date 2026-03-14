@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { ALERT_COLORS } from "./constants";
 import { T, type Lang } from "./i18n";
 
@@ -35,9 +35,13 @@ const LegendPanel = memo(function LegendPanel({
   const selectedDate = dates[dateIndex];
   const s = T[lang];
   const nextLang: Lang = lang === "he" ? "en" : "he";
+  const [collapsed, setCollapsed] = useState(() => window.innerWidth < 768);
 
   return (
-    <div className="slider-panel" dir={s.dir}>
+    <div
+      className={`slider-panel${collapsed ? " slider-panel--collapsed" : ""}`}
+      dir={s.dir}
+    >
       {/* ── Header: title + language toggle ── */}
       <div className="panel-header">
         <h1 className="panel-title">{s.title}</h1>
@@ -50,7 +54,7 @@ const LegendPanel = memo(function LegendPanel({
         </button>
       </div>
 
-      {/* ── Date slider ── */}
+      {/* ── Date slider (always visible) ── */}
       <p className="legend-desc">{s.sliderDesc}</p>
       <div className="slider-top">
         <button className="nav-btn" onClick={onPrev} disabled={dateIndex === 0}>
@@ -79,81 +83,96 @@ const LegendPanel = memo(function LegendPanel({
         className="date-range"
       />
 
-      {/* ── Color legend ── */}
-      <div className="panel-divider" />
-      <p className="legend-section-title">{s.alertFreqTitle}</p>
-      <p className="legend-desc">{s.alertFreqDesc}</p>
-      <div className="legend">
-        <span className="legend-label">1</span>
-        {ALERT_COLORS.map((rgb, i) => (
-          <span
-            key={i}
-            className="legend-cell"
-            style={{ background: `rgb(${rgb[0]},${rgb[1]},${rgb[2]})` }}
-            title={i < 8 ? String(i + 1) : "9+"}
-          />
-        ))}
-        <span className="legend-label" style={{ marginLeft: "auto" }}>
-          9+
-        </span>
-      </div>
-
-      {/* ── Size legend ── */}
-      <div className="panel-divider" />
-      <p className="legend-section-title">{s.popSizeTitle}</p>
-      <p className="legend-desc">{s.popSizeDesc}</p>
-      <svg
-        viewBox="0 0 280 80"
-        width="100%"
-        style={{ display: "block" }}
-        className="size-legend-svg"
-        aria-hidden="true"
+      {/* ── Collapse toggle ── */}
+      <button
+        className="collapse-btn"
+        onClick={() => setCollapsed((c) => !c)}
+        title={collapsed ? "Expand" : "Collapse"}
+        aria-expanded={!collapsed}
       >
-        {SIZE_SAMPLES.map(({ r, cx, label }) => (
-          <g key={cx}>
-            <circle
-              cx={cx}
-              cy={62 - r}
-              r={r}
-              fill="none"
-              stroke="rgba(255,255,255,0.55)"
-              strokeWidth={1}
-            />
-            <text
-              x={cx}
-              y={76}
-              textAnchor="middle"
-              fontSize="8"
-              fill="rgba(255,255,255,0.4)"
+        {collapsed ? "▾" : "▴"}
+      </button>
+
+      {/* ── Collapsible body ── */}
+      {!collapsed && (
+        <>
+          {/* ── Color legend ── */}
+          <div className="panel-divider" />
+          <p className="legend-section-title">{s.alertFreqTitle}</p>
+          <p className="legend-desc">{s.alertFreqDesc}</p>
+          <div className="legend">
+            <span className="legend-label">1</span>
+            {ALERT_COLORS.map((rgb, i) => (
+              <span
+                key={i}
+                className="legend-cell"
+                style={{ background: `rgb(${rgb[0]},${rgb[1]},${rgb[2]})` }}
+                title={i < 8 ? String(i + 1) : "9+"}
+              />
+            ))}
+            <span className="legend-label" style={{ marginLeft: "auto" }}>
+              9+
+            </span>
+          </div>
+
+          {/* ── Size legend ── */}
+          <div className="panel-divider" />
+          <p className="legend-section-title">{s.popSizeTitle}</p>
+          <p className="legend-desc">{s.popSizeDesc}</p>
+          <svg
+            viewBox="0 0 280 80"
+            width="100%"
+            style={{ display: "block" }}
+            className="size-legend-svg"
+            aria-hidden="true"
+          >
+            {SIZE_SAMPLES.map(({ r, cx, label }) => (
+              <g key={cx}>
+                <circle
+                  cx={cx}
+                  cy={62 - r}
+                  r={r}
+                  fill="none"
+                  stroke="rgba(255,255,255,0.55)"
+                  strokeWidth={1}
+                />
+                <text
+                  x={cx}
+                  y={76}
+                  textAnchor="middle"
+                  fontSize="8"
+                  fill="rgba(255,255,255,0.4)"
+                >
+                  {label}
+                </text>
+              </g>
+            ))}
+          </svg>
+          <p className="legend-desc">{s.closingDesc}</p>
+
+          {/* ── Footer: data source ── */}
+          <div className="panel-divider" />
+          <a
+            className="data-source-link"
+            href="https://www.tzevaadom.co.il/static/historical/all.json"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {s.dataSource}
+          </a>
+          <p className="data-source-link" style={{ opacity: 0.25 }}>
+            © 2026 Peter Bak ·{" "}
+            <a
+              href="https://visualanalytics.co.il"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "inherit", textDecoration: "underline" }}
             >
-              {label}
-            </text>
-          </g>
-        ))}
-      </svg>
-      <p className="legend-desc">{s.closingDesc}</p>
-
-      {/* ── Footer: data source ── */}
-      <div className="panel-divider" />
-      <a
-        className="data-source-link"
-        href="https://www.tzevaadom.co.il/static/historical/all.json"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        {s.dataSource}
-      </a>
-      <p className="data-source-link" style={{ opacity: 0.25 }}>
-        © 2026 Peter Bak ·{" "}
-        <a
-          href="https://visualanalytics.co.il"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: "inherit", textDecoration: "underline" }}
-        >
-          VisualAnalytics
-        </a>
-      </p>
+              VisualAnalytics
+            </a>
+          </p>
+        </>
+      )}
     </div>
   );
 });
