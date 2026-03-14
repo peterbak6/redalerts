@@ -143,14 +143,6 @@ const LegendPanel = memo(function LegendPanel({
       >
         {s.dataSource}
       </a>
-      <a
-        className="data-source-link"
-        href="https://visualanalytics.co.il/redalerts"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        visualanalytics.co.il/redalerts
-      </a>
       <p className="data-source-link" style={{ opacity: 0.25 }}>
         © 2026 Peter Bak ·{" "}
         <a
