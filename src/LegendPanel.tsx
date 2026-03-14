@@ -16,10 +16,12 @@ interface LegendPanelProps {
   dateIndex: number;
   totalAlerts: number;
   lang: Lang;
+  playing: boolean;
   onPrev: () => void;
   onNext: () => void;
   onSliderChange: (index: number) => void;
   onLangChange: (lang: Lang) => void;
+  onPlayPause: () => void;
 }
 
 const LegendPanel = memo(function LegendPanel({
@@ -27,10 +29,12 @@ const LegendPanel = memo(function LegendPanel({
   dateIndex,
   totalAlerts,
   lang,
+  playing,
   onPrev,
   onNext,
   onSliderChange,
   onLangChange,
+  onPlayPause,
 }: LegendPanelProps) {
   const selectedDate = dates[dateIndex];
   const s = T[lang];
@@ -58,7 +62,7 @@ const LegendPanel = memo(function LegendPanel({
       <p className="legend-desc">{s.sliderDesc}</p>
       <div className="slider-top">
         <button className="nav-btn" onClick={onPrev} disabled={dateIndex === 0}>
-          {s.dir === "rtl" ? "→" : "←"}
+          ←
         </button>
         <div className="date-info">
           <span className="date-label">{selectedDate}</span>
@@ -71,17 +75,27 @@ const LegendPanel = memo(function LegendPanel({
           onClick={onNext}
           disabled={dateIndex === dates.length - 1}
         >
-          {s.dir === "rtl" ? "←" : "→"}
+          →
         </button>
       </div>
-      <input
-        type="range"
-        min={0}
-        max={dates.length - 1}
-        value={dateIndex}
-        onChange={(e) => onSliderChange(Number(e.target.value))}
-        className="date-range"
-      />
+      <div className="slider-row">
+        <input
+          type="range"
+          min={0}
+          max={dates.length - 1}
+          value={dateIndex}
+          onChange={(e) => onSliderChange(Number(e.target.value))}
+          className="date-range"
+        />
+        <button
+          className="play-btn"
+          onClick={onPlayPause}
+          title={playing ? "Pause" : "Play"}
+          aria-label={playing ? "Pause" : "Play"}
+        >
+          {playing ? "⏸" : s.playArrow}
+        </button>
+      </div>
 
       {/* ── Collapse toggle ── */}
       <button

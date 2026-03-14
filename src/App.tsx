@@ -41,6 +41,7 @@ function App() {
   >({});
   const [booting, setBooting] = useState(true);
   const [lang, setLang] = useState<Lang>("he");
+  const [playing, setPlaying] = useState(false);
 
   // Load static assets once
   useEffect(() => {
@@ -160,14 +161,28 @@ function App() {
         getFillColor: (d) => alertColor(d.alertCount),
         radiusUnits: "pixels",
         pickable: true,
-        // transitions: {
-        //   getRadius: { duration: 200, enter: () => [0] },
-        //   getFillColor: { duration: 200, enter: () => [0, 0, 0, 0] },
-        // },
+        transitions: {
+          getRadius: { duration: 200, enter: () => [0] },
+          getFillColor: { duration: 200, enter: () => [0, 0, 0, 0] },
+        },
       }),
     ],
     [polygonData, cityDots],
   );
+
+  // Advance one day every 200 ms while playing; stop at the last date
+  useEffect(() => {
+    if (!playing) return;
+    const id = setInterval(() => {
+      setDateIndex((i) => (i >= dates.length - 1 ? i : i + 1));
+    }, 234);
+    return () => clearInterval(id);
+  }, [playing, dates.length]);
+
+  // Auto-stop when the last date is reached
+  useEffect(() => {
+    if (playing && dateIndex >= dates.length - 1) setPlaying(false);
+  }, [playing, dateIndex, dates.length]);
 
   const prev = useCallback(() => setDateIndex((i) => Math.max(0, i - 1)), []);
   const next = useCallback(
@@ -188,10 +203,12 @@ function App() {
         dateIndex={dateIndex}
         totalAlerts={totalAlerts}
         lang={lang}
+        playing={playing}
         onPrev={prev}
         onNext={next}
         onSliderChange={setDateIndex}
         onLangChange={setLang}
+        onPlayPause={() => setPlaying((p) => !p)}
       />
 
       {/* ── Map ── */}

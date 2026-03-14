@@ -15,6 +15,7 @@ export interface Strings {
   tooltipPopulation: (n: number) => string;
   tooltipTimesTitle: string;
   dataSource: string;
+  playArrow: string;
 }
 
 export const T: Record<Lang, Strings> = {
@@ -37,6 +38,7 @@ export const T: Record<Lang, Strings> = {
     tooltipPopulation: (n) => `אוכלוסייה: ${n.toLocaleString("he-IL")}`,
     tooltipTimesTitle: "שעות",
     dataSource: "מקור: צבע אדום",
+    playArrow: "◀", // triangle to the left
   },
   en: {
     dir: "ltr",
@@ -57,5 +59,6 @@ export const T: Record<Lang, Strings> = {
     tooltipPopulation: (n) => `Population: ${n.toLocaleString("en-US")}`,
     tooltipTimesTitle: "Times",
     dataSource: "Data source: Tzeva Adom",
+    playArrow: "▶",
   },
 };

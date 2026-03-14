@@ -132,11 +132,37 @@ html, body, #root {
   font-weight: 400;
 }
 
+/* ── Slider + play button row ── */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* ── Range slider ── */
 .date-range {
-  width: 100%;
+  flex: 1;
   accent-color: #fc4e2a;
   cursor: pointer;
+}
+
+.play-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 38px;
+  height: 38px;
+  font-size: 16px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.play-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
 }
 
 /* ── Panel sections ── */
