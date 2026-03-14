@@ -43,6 +43,8 @@ function App() {
   const [lang, setLang] = useState<Lang>("he");
   const [playing, setPlaying] = useState(false);
 
+  const playInterval = 789; // ms per day while playing
+
   // Load static assets once
   useEffect(() => {
     Promise.all([
@@ -162,8 +164,11 @@ function App() {
         radiusUnits: "pixels",
         pickable: true,
         transitions: {
-          getRadius: { duration: 200, enter: () => [0] },
-          getFillColor: { duration: 200, enter: () => [0, 0, 0, 0] },
+          // getRadius: { duration: playInterval, enter: () => [0] },
+          getFillColor: {
+            duration: playInterval / 2,
+            enter: () => [0, 0, 0, 0],
+          },
         },
       }),
     ],
@@ -175,7 +180,7 @@ function App() {
     if (!playing) return;
     const id = setInterval(() => {
       setDateIndex((i) => (i >= dates.length - 1 ? i : i + 1));
-    }, 234);
+    }, playInterval);
     return () => clearInterval(id);
   }, [playing, dates.length]);
 
