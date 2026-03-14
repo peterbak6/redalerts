@@ -5,13 +5,13 @@ import { Map } from "@vis.gl/react-maplibre";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import LegendPanel from "./LegendPanel";
+import { buildTooltip, type CityDot } from "./TooltipPanel";
 import { BASE, MAP_STYLE, INITIAL_VIEW_STATE } from "./constants";
 import { alertColor, radiusFromPopulation, buildZoneAliases } from "./utils";
-import { T, type Lang } from "./i18n";
+import { type Lang } from "./i18n";
 
-// Serve the plugin from the same origin to avoid cross-origin Worker restrictions
 maplibregl.setRTLTextPlugin(
-  `${import.meta.env.BASE_URL}mapbox-gl-rtl-text.js`,
+  `${window.location.origin}${import.meta.env.BASE_URL}mapbox-gl-rtl-text.js`,
   false,
 );
 
@@ -19,14 +19,6 @@ maplibregl.setRTLTextPlugin(
 type Alert = { cities: string[]; timestampIso: string };
 type DayData = { day: string; count: number; alerts: Alert[] };
 type CityInfo = { id: number; lat: number; lng: number; en?: string };
-type CityDot = {
-  name: string;
-  englishName: string;
-  position: [number, number];
-  alertCount: number;
-  population: number;
-  times: string[];
-};
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 async function fetchJson<T>(url: string): Promise<T> {
@@ -204,47 +196,7 @@ function App() {
         controller
         layers={layers}
         style={{ width: "100%", height: "100%" }}
-        getTooltip={({ object }) => {
-          const d = object as CityDot | null;
-          if (!d?.name || d.alertCount <= 0) return null;
-          const s = T[lang];
-
-          const cityName =
-            lang === "en" ? d.englishName : d.name.split(" - ")[0];
-          const MAX_TIMES = 15;
-          const shownTimes = d.times.slice(0, MAX_TIMES);
-          const overflow = d.times.length - shownTimes.length;
-
-          const timesHtml = d.times.length
-            ? `<div class="tt-divider"></div>
-               <p class="tt-row" style="opacity:0.45;margin-bottom:4px">${s.tooltipTimesTitle}</p>
-               <div class="tt-times-list">
-                 ${shownTimes.map((t) => `<span class="tt-time">${t}</span>`).join("")}
-                 ${overflow > 0 ? `<span class="tt-time">+${overflow}</span>` : ""}
-               </div>`
-            : "";
-
-          return {
-            html: `<div class="tt" dir="${s.dir}">
-              <div class="tt-name">${cityName}</div>
-              ${d.population > 0 ? `<div class="tt-row">${s.tooltipPopulation(d.population)}</div>` : ""}
-              <div class="tt-row">${s.tooltipAlerts(d.alertCount)}</div>
-              ${timesHtml}
-            </div>`,
-            style: {
-              background: "rgba(8, 10, 22, 0.92)",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              borderRadius: "12px",
-              padding: "12px 16px",
-              color: "#fff",
-              fontFamily:
-                "'Source Sans 3', 'Source Sans Pro', system-ui, sans-serif",
-              boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
-            },
-          };
-        }}
+        getTooltip={({ object }) => buildTooltip(object, lang)}
       >
         <Map mapStyle={MAP_STYLE} />
       </DeckGL>
