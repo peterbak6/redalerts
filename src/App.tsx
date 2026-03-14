@@ -160,6 +160,10 @@ function App() {
         getFillColor: (d) => alertColor(d.alertCount),
         radiusUnits: "pixels",
         pickable: true,
+        // transitions: {
+        //   getRadius: { duration: 200, enter: () => [0] },
+        //   getFillColor: { duration: 200, enter: () => [0, 0, 0, 0] },
+        // },
       }),
     ],
     [polygonData, cityDots],
