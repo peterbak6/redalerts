@@ -5,6 +5,8 @@ on:
     # Runs every day at 06:00 UTC (09:00 Israel time)
     - cron: "0 6 * * *"
   workflow_dispatch: # allow manual trigger from GitHub UI
+  push:
+    branches: [main]
 
 permissions:
   contents: write
@@ -28,28 +30,31 @@ jobs:
         run: npm ci
 
       - name: Fetch latest alerts
+        if: github.event_name != 'push'
         run: npm run fetch-alerts
 
       - name: Check for new data
         id: diff
+        if: github.event_name != 'push'
         run: |
           git diff --quiet public/red-alert/ || echo "changed=true" >> "$GITHUB_OUTPUT"
 
       - name: Commit updated data
-        if: steps.diff.outputs.changed == 'true'
+        if: github.event_name != 'push' && steps.diff.outputs.changed == 'true'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
           git add public/red-alert/
           git commit -m "chore: update red-alert data [$(date -u +%Y-%m-%d)]"
           git push
 
       - name: Build
-        if: steps.diff.outputs.changed == 'true'
+        if: github.event_name == 'push' || steps.diff.outputs.changed == 'true'
         run: npm run build
 
       - name: Deploy to GitHub Pages
-        if: steps.diff.outputs.changed == 'true'
+        if: github.event_name == 'push' || steps.diff.outputs.changed == 'true'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
