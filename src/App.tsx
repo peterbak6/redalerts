@@ -94,6 +94,22 @@ function App() {
     [citiesRaw, populationRaw],
   );
 
+  // ── All-time totals (denominator for % circles) ──
+  const allCitiesCount = useMemo(
+    () => Object.keys(citiesRaw).filter((name) => !zoneAliases[name]).length,
+    [citiesRaw, zoneAliases],
+  );
+  const allPopulation = useMemo(
+    () =>
+      Object.entries(citiesRaw)
+        .filter(([name]) => !zoneAliases[name])
+        .reduce(
+          (sum, [, info]) => sum + (populationRaw[String(info.id)] ?? 0),
+          0,
+        ),
+    [citiesRaw, zoneAliases, populationRaw],
+  );
+
   const cityDots = useMemo((): CityDot[] => {
     if (!dayData) return [];
 
@@ -202,6 +218,10 @@ function App() {
   const totalAlerts = dayData?.count ?? 0;
   const totalCities = cityDots.length;
   const totalPopulation = cityDots.reduce((sum, d) => sum + d.population, 0);
+  const maxAlertCount = cityDots.reduce(
+    (max, d) => Math.max(max, d.alertCount),
+    0,
+  );
 
   return (
     <div className="app">
@@ -211,6 +231,9 @@ function App() {
         totalAlerts={totalAlerts}
         totalCities={totalCities}
         totalPopulation={totalPopulation}
+        maxAlertCount={maxAlertCount}
+        allCitiesCount={allCitiesCount}
+        allPopulation={allPopulation}
         lang={lang}
         playing={playing}
         onPrev={prev}

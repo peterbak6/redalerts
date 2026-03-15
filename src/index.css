@@ -133,20 +133,21 @@ html, body, #root {
   font-size: var(--fs-body);
 }
 
-.alert-info {
-  display: flex;  
+.stat-circles {
+  display: flex;
   flex-direction: row;
   justify-content: space-between;
+  gap: 4px;
 }
 
-.alert-count {
-  font-size: var(--fs-title);
-  /* opacity: 0.55; */
-  padding: 6px;
-  letter-spacing: 0.02em;
-  font-weight: 400;
-  border: 1px solid rgba(255, 255, 255, 0.50);
-  border-radius: 6px;;
+.stat-circle-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.stat-circle-svg {
+  width: 100%;
+  height: auto;
 }
 
 /* ── Slider + play button row ── */

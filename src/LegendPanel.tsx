@@ -2,6 +2,70 @@ import { memo, useState } from "react";
 import { ALERT_COLORS } from "./constants";
 import { T, type Lang } from "./i18n";
 
+// ─── Stat Circle ────────────────────────────────────────────────────────────
+function StatCircle({
+  value,
+  label,
+  fraction,
+  colorRgb,
+}: {
+  value: string;
+  label: string;
+  fraction: number; // 0–1
+  colorRgb: [number, number, number];
+}) {
+  const R = 30;
+  const C = 2 * Math.PI * R;
+  const dash = Math.max(0, Math.min(1, fraction)) * C;
+  const color = `rgb(${colorRgb[0]},${colorRgb[1]},${colorRgb[2]})`;
+  return (
+    <div className="stat-circle-wrap">
+      <svg viewBox="0 0 80 80" className="stat-circle-svg">
+        <circle
+          cx="40"
+          cy="40"
+          r={R}
+          fill="none"
+          stroke="rgba(255,255,255,0.1)"
+          strokeWidth="5"
+        />
+        <circle
+          cx="40"
+          cy="40"
+          r={R}
+          fill="none"
+          stroke={color}
+          strokeWidth="5"
+          strokeDasharray={`${dash} ${C}`}
+          strokeLinecap="round"
+          transform="rotate(-90 40 40)"
+        />
+        <text
+          x="40"
+          y="37"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontSize="12"
+          fontWeight="600"
+          fill="white"
+        >
+          {value}
+        </text>
+        <text
+          x="40"
+          y="54"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontSize="8"
+          fill="rgba(255,255,255,0.55)"
+        >
+          {label}
+        </text>
+      </svg>
+    </div>
+  );
+}
+
 const SIZE_SAMPLES: { r: number; cx: number; label: string }[] = [
   { r: 23.4, cx: 25, label: "1M" },
   { r: 16.8, cx: 85, label: "500K" },
@@ -17,6 +81,9 @@ interface LegendPanelProps {
   totalAlerts: number;
   totalCities: number;
   totalPopulation: number;
+  maxAlertCount: number;
+  allCitiesCount: number;
+  allPopulation: number;
   lang: Lang;
   playing: boolean;
   onPrev: () => void;
@@ -42,6 +109,9 @@ const LegendPanel = memo(function LegendPanel({
   totalAlerts,
   totalCities,
   totalPopulation,
+  maxAlertCount,
+  allCitiesCount,
+  allPopulation,
   lang,
   playing,
   onPrev,
@@ -108,19 +178,45 @@ const LegendPanel = memo(function LegendPanel({
         </button>
       </div>
 
+      {/* ── Exposure info (always visible) ── */}
       <div className="exposure-info">
         <p className="legend-section-title">{s.exposureTitle}</p>
         <p className="legend-desc">{s.exposureDesc}</p>
-        <div className="alert-info">
-          <span className="alert-count">
-            {totalAlerts.toLocaleString()} {s.alerts}
-          </span>
-          <span className="alert-count">
-            {totalCities.toLocaleString()} {s.cities}
-          </span>
-          <span className="alert-count">
-            {humanReadableCount(totalPopulation)} {s.people}
-          </span>
+        <div className="stat-circles">
+          <StatCircle
+            value={totalAlerts.toLocaleString()}
+            label={s.alerts}
+            fraction={1}
+            colorRgb={
+              maxAlertCount > 0
+                ? ALERT_COLORS[
+                    Math.min(maxAlertCount - 1, ALERT_COLORS.length - 1)
+                  ]
+                : [100, 100, 100]
+            }
+          />
+          <StatCircle
+            value={totalCities.toLocaleString()}
+            label={s.cities}
+            fraction={allCitiesCount > 0 ? totalCities / allCitiesCount : 0}
+            colorRgb={
+              ALERT_COLORS[
+                Math.floor((ALERT_COLORS.length * totalCities) / allCitiesCount)
+              ]
+            }
+          />
+          <StatCircle
+            value={humanReadableCount(totalPopulation)}
+            label={s.people}
+            fraction={allPopulation > 0 ? totalPopulation / allPopulation : 0}
+            colorRgb={
+              ALERT_COLORS[
+                Math.floor(
+                  (ALERT_COLORS.length * totalPopulation) / allPopulation,
+                )
+              ]
+            }
+          />
         </div>
       </div>
 
