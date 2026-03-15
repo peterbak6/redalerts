@@ -5,7 +5,11 @@ export interface Strings {
   title: string;
   langToggleLabel: string;
   sliderDesc: string;
+  exposureTitle: string;
+  exposureDesc: string;
   alerts: string;
+  cities: string;
+  people: string;
   alertFreqTitle: string;
   alertFreqDesc: string;
   popSizeTitle: string;
@@ -27,7 +31,12 @@ export const T: Record<Lang, Strings> = {
     title: "התראות צבע אדום",
     sliderDesc:
       "הזיזו את הסליידר כדי לעיין בהתראות לפי תאריך. מוצגים רק תאריכים שעבורם קיים מידע. כל עיגול מייצג עיר שבה הופעלה התראה.",
+    exposureTitle: "חשיפה",
+    exposureDesc:
+      "מספר ההתראות ברחבי הארץ, ומספר היישובים והאוכלוסייה שבהם הופעלה לפחות התראה אחת",
     alerts: "התראות",
+    cities: "ישובים",
+    people: "תושבים",
     alertFreqTitle: "תדירות התראות",
     alertFreqDesc:
       "הצבע מציין כמה התראות נרשמו בכל עיר באותו יום. גוון אדום כהה יותר מצביע על מספר התראות גבוה יותר.",
@@ -50,7 +59,12 @@ export const T: Record<Lang, Strings> = {
     langToggleLabel: "עב",
     sliderDesc:
       "Move the slider to explore alerts by date. Only dates with available data are shown. Each circle marks a city where an alert was triggered.",
+    exposureTitle: "Exposure",
+    exposureDesc:
+      "Number of alerts across the country, and the number of places and population where at least one alert was triggered.",
     alerts: "alerts",
+    cities: "cities",
+    people: "people",
     alertFreqTitle: "Alert frequency",
     alertFreqDesc:
       "Color indicates how many alerts were recorded in each city on that day. Darker red color means more alerts, and more times the population had to run to shelter.",

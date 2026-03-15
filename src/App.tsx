@@ -200,6 +200,8 @@ function App() {
   }
 
   const totalAlerts = dayData?.count ?? 0;
+  const totalCities = cityDots.length;
+  const totalPopulation = cityDots.reduce((sum, d) => sum + d.population, 0);
 
   return (
     <div className="app">
@@ -207,6 +209,8 @@ function App() {
         dates={dates}
         dateIndex={dateIndex}
         totalAlerts={totalAlerts}
+        totalCities={totalCities}
+        totalPopulation={totalPopulation}
         lang={lang}
         playing={playing}
         onPrev={prev}

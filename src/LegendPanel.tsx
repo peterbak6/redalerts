@@ -15,6 +15,8 @@ interface LegendPanelProps {
   dates: string[];
   dateIndex: number;
   totalAlerts: number;
+  totalCities: number;
+  totalPopulation: number;
   lang: Lang;
   playing: boolean;
   onPrev: () => void;
@@ -24,10 +26,22 @@ interface LegendPanelProps {
   onPlayPause: () => void;
 }
 
+const humanReadableCount = (count: number): string => {
+  if (count >= 1_000_000) {
+    return `${(count / 1_000_000).toFixed(1)}M`;
+  } else if (count >= 1_000) {
+    return `${(count / 1_000).toFixed(1)}K`;
+  } else {
+    return count.toString();
+  }
+};
+
 const LegendPanel = memo(function LegendPanel({
   dates,
   dateIndex,
   totalAlerts,
+  totalCities,
+  totalPopulation,
   lang,
   playing,
   onPrev,
@@ -66,9 +80,6 @@ const LegendPanel = memo(function LegendPanel({
         </button>
         <div className="date-info">
           <span className="date-label">{selectedDate}</span>
-          <span className="alert-count">
-            {totalAlerts.toLocaleString()} {s.alerts}
-          </span>
         </div>
         <button
           className="nav-btn"
@@ -97,6 +108,22 @@ const LegendPanel = memo(function LegendPanel({
         </button>
       </div>
 
+      <div className="exposure-info">
+        <p className="legend-section-title">{s.exposureTitle}</p>
+        <p className="legend-desc">{s.exposureDesc}</p>
+        <div className="alert-info">
+          <span className="alert-count">
+            {totalAlerts.toLocaleString()} {s.alerts}
+          </span>
+          <span className="alert-count">
+            {totalCities.toLocaleString()} {s.cities}
+          </span>
+          <span className="alert-count">
+            {humanReadableCount(totalPopulation)} {s.people}
+          </span>
+        </div>
+      </div>
+
       {/* ── Collapse toggle ── */}
       <button
         className="collapse-btn"
@@ -111,7 +138,7 @@ const LegendPanel = memo(function LegendPanel({
       {!collapsed && (
         <>
           {/* ── Color legend ── */}
-          <div className="panel-divider" />
+          {/* <div className="panel-divider" /> */}
           <p className="legend-section-title">{s.alertFreqTitle}</p>
           <p className="legend-desc">{s.alertFreqDesc}</p>
           <div className="legend">
