@@ -142,7 +142,7 @@ const LegendPanel = memo(function LegendPanel({
         </button>
       </div>
 
-      {/* ── Date slider (always visible) ── */}
+      {/* ── Date Prev Next buttons ── */}
       <p className="legend-desc">{s.sliderDesc}</p>
       <div className="slider-top">
         <button className="nav-btn" onClick={onPrev} disabled={dateIndex === 0}>
@@ -159,66 +159,6 @@ const LegendPanel = memo(function LegendPanel({
           {s.nextArrow}
         </button>
       </div>
-      <div className="slider-row">
-        <input
-          type="range"
-          min={0}
-          max={dates.length - 1}
-          value={dateIndex}
-          onChange={(e) => onSliderChange(Number(e.target.value))}
-          className="date-range"
-        />
-        <button
-          className="play-btn"
-          onClick={onPlayPause}
-          title={playing ? "Pause" : "Play"}
-          aria-label={playing ? "Pause" : "Play"}
-        >
-          {playing ? "⏸" : s.playArrow}
-        </button>
-      </div>
-
-      {/* ── Exposure info (always visible) ── */}
-      <div className="exposure-info">
-        <p className="legend-section-title">{s.exposureTitle}</p>
-        <p className="legend-desc">{s.exposureDesc}</p>
-        <div className="stat-circles">
-          <StatCircle
-            value={totalAlerts.toLocaleString()}
-            label={s.alerts}
-            fraction={1}
-            colorRgb={
-              maxAlertCount > 0
-                ? ALERT_COLORS[
-                    Math.min(maxAlertCount - 1, ALERT_COLORS.length - 1)
-                  ]
-                : [100, 100, 100]
-            }
-          />
-          <StatCircle
-            value={totalCities.toLocaleString()}
-            label={s.cities}
-            fraction={allCitiesCount > 0 ? totalCities / allCitiesCount : 0}
-            colorRgb={
-              ALERT_COLORS[
-                Math.floor((ALERT_COLORS.length * totalCities) / allCitiesCount)
-              ]
-            }
-          />
-          <StatCircle
-            value={humanReadableCount(totalPopulation)}
-            label={s.people}
-            fraction={allPopulation > 0 ? totalPopulation / allPopulation : 0}
-            colorRgb={
-              ALERT_COLORS[
-                Math.floor(
-                  (ALERT_COLORS.length * totalPopulation) / allPopulation,
-                )
-              ]
-            }
-          />
-        </div>
-      </div>
 
       {/* ── Collapse toggle ── */}
       <button
@@ -233,6 +173,72 @@ const LegendPanel = memo(function LegendPanel({
       {/* ── Collapsible body ── */}
       {!collapsed && (
         <>
+          {/* ── Date slider + play/pause button ── */}
+          <div className="slider-row">
+            <input
+              type="range"
+              min={0}
+              max={dates.length - 1}
+              value={dateIndex}
+              onChange={(e) => onSliderChange(Number(e.target.value))}
+              className="date-range"
+            />
+            <button
+              className="play-btn"
+              onClick={onPlayPause}
+              title={playing ? "Pause" : "Play"}
+              aria-label={playing ? "Pause" : "Play"}
+            >
+              {playing ? "⏸" : s.playArrow}
+            </button>
+          </div>
+
+          {/* ── Exposure info ── */}
+          <div className="exposure-info">
+            <p className="legend-section-title">{s.exposureTitle}</p>
+            <p className="legend-desc">{s.exposureDesc}</p>
+            <div className="stat-circles">
+              <StatCircle
+                value={totalAlerts.toLocaleString()}
+                label={s.alerts}
+                fraction={1}
+                colorRgb={
+                  maxAlertCount > 0
+                    ? ALERT_COLORS[
+                        Math.min(maxAlertCount - 1, ALERT_COLORS.length - 1)
+                      ]
+                    : [100, 100, 100]
+                }
+              />
+              <StatCircle
+                value={totalCities.toLocaleString()}
+                label={s.cities}
+                fraction={allCitiesCount > 0 ? totalCities / allCitiesCount : 0}
+                colorRgb={
+                  ALERT_COLORS[
+                    Math.floor(
+                      (ALERT_COLORS.length * totalCities) / allCitiesCount,
+                    )
+                  ]
+                }
+              />
+              <StatCircle
+                value={humanReadableCount(totalPopulation)}
+                label={s.people}
+                fraction={
+                  allPopulation > 0 ? totalPopulation / allPopulation : 0
+                }
+                colorRgb={
+                  ALERT_COLORS[
+                    Math.floor(
+                      (ALERT_COLORS.length * totalPopulation) / allPopulation,
+                    )
+                  ]
+                }
+              />
+            </div>
+          </div>
+
           {/* ── Color legend ── */}
           {/* <div className="panel-divider" /> */}
           <p className="legend-section-title">{s.alertFreqTitle}</p>
