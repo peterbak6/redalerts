@@ -21,4 +21,6 @@ export const INITIAL_VIEW_STATE = {
   zoom: 7.2,
   pitch: 0,
   bearing: 0,
+  minPitch: 0, // Prevent tilting up
+  maxPitch: 0, // Prevent tilting down
 };
