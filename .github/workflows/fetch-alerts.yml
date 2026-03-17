@@ -44,9 +44,9 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin main
           git add public/red-alert/
           git commit -m "chore: update red-alert data [$(date -u +%Y-%m-%d)]"
+          git pull --rebase origin main
           git push
 
       - name: Build
