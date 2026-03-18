@@ -16,7 +16,7 @@ maplibregl.setRTLTextPlugin(
 );
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type Alert = { cities: string[]; timestampIso: string };
+type Alert = { serialNumber: number; cities: string[]; timestampIso: string };
 type DayData = { day: string; count: number; alerts: Alert[] };
 type CityInfo = { id: number; lat: number; lng: number; en?: string };
 
@@ -120,30 +120,34 @@ function App() {
       hour12: false,
     });
 
-    // Raw per-zone alert counts and times
-    const rawCounts: Record<string, number> = {};
-    const rawTimes: Record<string, string[]> = {};
+    // Map each serialNumber to its formatted time (first occurrence wins)
+    const serialTime: Record<number, string> = {};
+    // Map each sub-zone to the set of serialNumbers that hit it
+    const rawSerials: Record<string, Set<number>> = {};
     for (const alert of dayData.alerts) {
       const t = timeFmt.format(new Date(alert.timestampIso));
+      if (!(alert.serialNumber in serialTime))
+        serialTime[alert.serialNumber] = t;
       for (const city of alert.cities) {
-        rawCounts[city] = (rawCounts[city] ?? 0) + 1;
-        if (!rawTimes[city]) rawTimes[city] = [];
-        rawTimes[city].push(t);
+        if (!rawSerials[city]) rawSerials[city] = new Set();
+        rawSerials[city].add(alert.serialNumber);
       }
     }
 
-    // Aggregate into representatives using MAX count; merge all times
+    // Aggregate into representatives: union serial sets across sub-zones
+    const serialsByRep: Record<string, Set<number>> = {};
+    for (const [name, serials] of Object.entries(rawSerials)) {
+      const rep = zoneAliases[name] ?? name;
+      if (!serialsByRep[rep]) serialsByRep[rep] = new Set();
+      for (const s of serials) serialsByRep[rep].add(s);
+    }
+
+    // count = distinct serial numbers; times = one entry per serial (sorted)
     const counts: Record<string, number> = {};
     const times: Record<string, string[]> = {};
-    for (const [name, count] of Object.entries(rawCounts)) {
-      const rep = zoneAliases[name] ?? name;
-      counts[rep] = Math.max(counts[rep] ?? 0, count);
-      if (!times[rep]) times[rep] = [];
-      times[rep].push(...(rawTimes[name] ?? []));
-    }
-    // Sort and deduplicate times per city
-    for (const rep of Object.keys(times)) {
-      times[rep] = [...new Set(times[rep])].sort();
+    for (const [rep, serials] of Object.entries(serialsByRep)) {
+      counts[rep] = serials.size;
+      times[rep] = [...new Set([...serials].map((s) => serialTime[s]))].sort();
     }
 
     return Object.entries(citiesRaw)
