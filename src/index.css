@@ -11,7 +11,7 @@
   --fs-body:     13px; /* document body    19pt → 25px → −60% */
   --fs-title:    12px; /* chart title      18pt → 24px → −60% */
   --fs-coords:   11px; /* chart coords     16pt → 21px → −60% */
-  --fs-overlay:  10px; /* text overlay     15pt → 20px → −60% */
+  --fs-overlay:  11px; /* text overlay     15pt → 20px → −60% */
 }
 
 html, body, #root {
