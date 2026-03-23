@@ -26,6 +26,8 @@ const MAX_TIMES = 15;
 export function buildTooltip(
   object: unknown,
   lang: Lang,
+  x = 0,
+  y = 0,
 ): { html: string; style: Record<string, string> } | null {
   const d = object as CityDot | null;
   if (!d?.name || d.alertCount <= 0) return null;
@@ -44,6 +46,7 @@ export function buildTooltip(
        </div>`
     : "";
 
+  const onRight = x > window.innerWidth / 2;
   return {
     html: `<div class="tt" dir="${s.dir}">
       <div class="tt-name">${cityName}</div>
@@ -51,6 +54,9 @@ export function buildTooltip(
       <div class="tt-row">${s.tooltipAlerts(d.alertCount)}</div>
       ${timesHtml}
     </div>`,
-    style: TOOLTIP_STYLE,
+    style: {
+      ...TOOLTIP_STYLE,
+      transform: `translate(${x}px, ${y}px)${onRight ? " translateX(-100%)" : ""}`,
+    },
   };
 }

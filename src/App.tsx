@@ -256,7 +256,7 @@ function App() {
         controller
         layers={layers}
         style={{ width: "100%", height: "100%" }}
-        getTooltip={({ object }) => buildTooltip(object, lang)}
+        getTooltip={({ object, x, y }) => buildTooltip(object, lang, x, y)}
       >
         <Map mapStyle={MAP_STYLE} attributionControl={{ compact: true }} />
       </DeckGL>
