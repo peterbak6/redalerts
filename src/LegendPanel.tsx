@@ -163,7 +163,7 @@ const LegendPanel = memo(function LegendPanel({
       const delta = y - dragStart.current.y;
       const newH = Math.max(
         100,
-        Math.min(window.innerHeight * 0.5, dragStart.current.h + delta),
+        Math.min(window.innerHeight * 0.6, dragStart.current.h + delta),
       );
       setPanelHeight(newH);
     };
@@ -364,7 +364,7 @@ const LegendPanel = memo(function LegendPanel({
           >
             {s.dataSource}
           </a>
-          <p className="data-source-link" style={{ opacity: 0.25 }}>
+          <p className="data-source-link" style={{ opacity: 0.65 }}>
             © 2026 Peter Bak ·{" "}
             <a
               href="https://visualanalytics.co.il"

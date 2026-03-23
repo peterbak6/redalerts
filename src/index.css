@@ -59,7 +59,7 @@ html, body, #root {
   gap: 5px;
   min-width: 240px;
   max-width: min(70vw, 340px);
-  max-height: 50vh;
+  max-height: 60vh;
   overflow: hidden;
   color: #fff;
   user-select: none;
