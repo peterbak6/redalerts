@@ -16,8 +16,8 @@ export const MAP_STYLE =
   "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
 
 export const INITIAL_VIEW_STATE = {
-  longitude: 34.8516,
-  latitude: 31.4,
+  longitude: 35.1,
+  latitude: 31.9,
   zoom: 7.2,
   pitch: 0,
   bearing: 0,

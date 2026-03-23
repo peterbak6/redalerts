@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useRef, useState } from "react";
 import { ALERT_COLORS } from "./constants";
 import { T, type Lang } from "./i18n";
 
@@ -93,6 +93,23 @@ interface LegendPanelProps {
   onPlayPause: () => void;
 }
 
+function InfoTip({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        className="info-btn"
+        title={text}
+        onClick={() => setOpen((o) => !o)}
+        aria-label="info"
+      >
+        ⓘ
+      </button>
+      {open && <p className="legend-desc info-tip-text">{text}</p>}
+    </>
+  );
+}
+
 const humanReadableCount = (count: number): string => {
   if (count >= 1_000_000) {
     return `${(count / 1_000_000).toFixed(1)}M`;
@@ -123,55 +140,95 @@ const LegendPanel = memo(function LegendPanel({
   const selectedDate = dates[dateIndex];
   const s = T[lang];
   const nextLang: Lang = lang === "he" ? "en" : "he";
-  const [collapsed, setCollapsed] = useState(() => window.innerWidth < 768);
+  const [sliderDescOpen, setSliderDescOpen] = useState(false);
+  const [panelHeight, setPanelHeight] = useState<number | null>(() =>
+    window.innerWidth < 768 ? 100 : null,
+  );
+  const panelRef = useRef<HTMLDivElement>(null);
+  const dragStart = useRef<{ y: number; h: number } | null>(null);
+
+  const onResizeStart = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+    dragStart.current = {
+      y: clientY,
+      h: panelRef.current?.offsetHeight ?? 300,
+    };
+    const onMove = (ev: MouseEvent | TouchEvent) => {
+      if (!dragStart.current) return;
+      const y =
+        "touches" in ev
+          ? (ev as TouchEvent).touches[0].clientY
+          : (ev as MouseEvent).clientY;
+      const delta = y - dragStart.current.y;
+      const newH = Math.max(
+        100,
+        Math.min(window.innerHeight * 0.5, dragStart.current.h + delta),
+      );
+      setPanelHeight(newH);
+    };
+    const onUp = () => {
+      dragStart.current = null;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    window.addEventListener("touchmove", onMove, { passive: false });
+    window.addEventListener("touchend", onUp);
+  };
 
   return (
     <div
-      className={`slider-panel${collapsed ? " slider-panel--collapsed" : ""}`}
+      ref={panelRef}
+      className="slider-panel"
       dir={s.dir}
+      style={panelHeight ? { height: panelHeight } : undefined}
     >
-      {/* ── Header: title + language toggle ── */}
-      <div className="panel-header">
-        <h1 className="panel-title">{s.title}</h1>
-        <button
-          className="lang-toggle"
-          onClick={() => onLangChange(nextLang)}
-          title={lang === "he" ? "Switch to English" : "עבור לעברית"}
-        >
-          {s.langToggleLabel}
-        </button>
-      </div>
-
-      {/* ── Date Prev Next buttons ── */}
-      <p className="legend-desc">{s.sliderDesc}</p>
-      <div className="slider-top">
-        <button className="nav-btn" onClick={onPrev} disabled={dateIndex === 0}>
-          {s.prevArrow}
-        </button>
-        <div className="date-info">
-          <span className="date-label">{selectedDate}</span>
+      <div className="panel-scroll">
+        {/* ── Header: title + language toggle ── */}
+        <div className="panel-header">
+          <h1 className="panel-title">{s.title}</h1>
+          <button
+            className="info-btn"
+            title={s.sliderDesc}
+            onClick={() => setSliderDescOpen((o) => !o)}
+            aria-label="info"
+          >
+            ⓘ
+          </button>
+          <button
+            className="lang-toggle"
+            onClick={() => onLangChange(nextLang)}
+            title={lang === "he" ? "Switch to English" : "עבור לעברית"}
+          >
+            {s.langToggleLabel}
+          </button>
         </div>
-        <button
-          className="nav-btn"
-          onClick={onNext}
-          disabled={dateIndex === dates.length - 1}
-        >
-          {s.nextArrow}
-        </button>
-      </div>
+        {sliderDescOpen && <p className="legend-desc">{s.sliderDesc}</p>}
+        <div className="slider-top">
+          <button
+            className="nav-btn"
+            onClick={onPrev}
+            disabled={dateIndex === 0}
+          >
+            {s.prevArrow}
+          </button>
+          <div className="date-info">
+            <span className="date-label">{selectedDate}</span>
+          </div>
+          <button
+            className="nav-btn"
+            onClick={onNext}
+            disabled={dateIndex === dates.length - 1}
+          >
+            {s.nextArrow}
+          </button>
+        </div>
 
-      {/* ── Collapse toggle ── */}
-      <button
-        className="collapse-btn"
-        onClick={() => setCollapsed((c) => !c)}
-        title={collapsed ? "Expand" : "Collapse"}
-        aria-expanded={!collapsed}
-      >
-        {collapsed ? "▾" : "▴"}
-      </button>
-
-      {/* ── Collapsible body ── */}
-      {!collapsed && (
+        {/* ── Body ── */}
         <>
           {/* ── Date slider + play/pause button ── */}
           <div className="slider-row">
@@ -195,8 +252,10 @@ const LegendPanel = memo(function LegendPanel({
 
           {/* ── Exposure info ── */}
           <div className="exposure-info">
-            <p className="legend-section-title">{s.exposureTitle}</p>
-            <p className="legend-desc">{s.exposureDesc}</p>
+            <div className="legend-section-row">
+              <p className="legend-section-title">{s.exposureTitle}</p>
+              <InfoTip text={s.exposureDesc} />
+            </div>
             <div className="stat-circles">
               <StatCircle
                 value={totalAlerts.toLocaleString()}
@@ -241,8 +300,10 @@ const LegendPanel = memo(function LegendPanel({
 
           {/* ── Color legend ── */}
           {/* <div className="panel-divider" /> */}
-          <p className="legend-section-title">{s.alertFreqTitle}</p>
-          <p className="legend-desc">{s.alertFreqDesc}</p>
+          <div className="legend-section-row">
+            <p className="legend-section-title">{s.alertFreqTitle}</p>
+            <InfoTip text={s.alertFreqDesc} />
+          </div>
           <div className="legend">
             <span className="legend-label">1</span>
             {ALERT_COLORS.map((rgb, i) => (
@@ -260,8 +321,10 @@ const LegendPanel = memo(function LegendPanel({
 
           {/* ── Size legend ── */}
           <div className="panel-divider" />
-          <p className="legend-section-title">{s.popSizeTitle}</p>
-          <p className="legend-desc">{s.popSizeDesc}</p>
+          <div className="legend-section-row">
+            <p className="legend-section-title">{s.popSizeTitle}</p>
+            <InfoTip text={`${s.popSizeDesc} ${s.closingDesc}`} />
+          </div>
           <svg
             viewBox="0 0 280 80"
             width="100%"
@@ -291,8 +354,6 @@ const LegendPanel = memo(function LegendPanel({
               </g>
             ))}
           </svg>
-          <p className="legend-desc">{s.closingDesc}</p>
-
           {/* ── Footer: data source ── */}
           <div className="panel-divider" />
           <a
@@ -315,7 +376,17 @@ const LegendPanel = memo(function LegendPanel({
             </a>
           </p>
         </>
-      )}
+      </div>
+      {/* end panel-scroll */}
+
+      {/* ── Resize handle ── */}
+      <div
+        className="resize-handle"
+        onMouseDown={onResizeStart}
+        onTouchStart={onResizeStart}
+      >
+        =
+      </div>
     </div>
   );
 });

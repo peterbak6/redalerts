@@ -258,7 +258,7 @@ function App() {
         style={{ width: "100%", height: "100%" }}
         getTooltip={({ object }) => buildTooltip(object, lang)}
       >
-        <Map mapStyle={MAP_STYLE} />
+        <Map mapStyle={MAP_STYLE} attributionControl={{ compact: true }} />
       </DeckGL>
     </div>
   );
