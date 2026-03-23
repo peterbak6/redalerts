@@ -1,4 +1,4 @@
-import { memo, useRef, useState } from "react";
+import { memo, useState } from "react";
 import { ALERT_COLORS } from "./constants";
 import { T, type Lang } from "./i18n";
 
@@ -141,95 +141,59 @@ const LegendPanel = memo(function LegendPanel({
   const s = T[lang];
   const nextLang: Lang = lang === "he" ? "en" : "he";
   const [sliderDescOpen, setSliderDescOpen] = useState(false);
-  const [panelHeight, setPanelHeight] = useState<number | null>(() =>
-    window.innerWidth < 768 ? 100 : null,
-  );
-  const panelRef = useRef<HTMLDivElement>(null);
-  const dragStart = useRef<{ y: number; h: number } | null>(null);
-
-  const onResizeStart = (e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault();
-    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
-    dragStart.current = {
-      y: clientY,
-      h: panelRef.current?.offsetHeight ?? 300,
-    };
-    const onMove = (ev: MouseEvent | TouchEvent) => {
-      if (!dragStart.current) return;
-      const y =
-        "touches" in ev
-          ? (ev as TouchEvent).touches[0].clientY
-          : (ev as MouseEvent).clientY;
-      const delta = y - dragStart.current.y;
-      const newH = Math.max(
-        100,
-        Math.min(window.innerHeight * 0.6, dragStart.current.h + delta),
-      );
-      setPanelHeight(newH);
-    };
-    const onUp = () => {
-      dragStart.current = null;
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-      window.removeEventListener("touchmove", onMove);
-      window.removeEventListener("touchend", onUp);
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    window.addEventListener("touchmove", onMove, { passive: false });
-    window.addEventListener("touchend", onUp);
-  };
+  const [collapsed, setCollapsed] = useState(() => window.innerWidth < 768);
 
   return (
-    <div
-      ref={panelRef}
-      className="slider-panel"
-      dir={s.dir}
-      style={panelHeight ? { height: panelHeight } : undefined}
-    >
-      <div className="panel-scroll">
-        {/* ── Header: title + language toggle ── */}
-        <div className="panel-header">
-          <h1 className="panel-title">{s.title}</h1>
-          <button
-            className="info-btn"
-            title={s.sliderDesc}
-            onClick={() => setSliderDescOpen((o) => !o)}
-            aria-label="info"
-          >
-            ⓘ
-          </button>
-          <button
-            className="lang-toggle"
-            onClick={() => onLangChange(nextLang)}
-            title={lang === "he" ? "Switch to English" : "עבור לעברית"}
-          >
-            {s.langToggleLabel}
-          </button>
+    <div className="slider-panel" dir={s.dir}>
+      {/* ── Header: title + language toggle ── */}
+      <div className="panel-header">
+        <h1 className="panel-title">{s.title}</h1>
+        <button
+          className="info-btn"
+          title={s.sliderDesc}
+          onClick={() => setSliderDescOpen((o) => !o)}
+          aria-label="info"
+        >
+          ⓘ
+        </button>
+        <button
+          className="lang-toggle"
+          onClick={() => onLangChange(nextLang)}
+          title={lang === "he" ? "Switch to English" : "עבור לעברית"}
+        >
+          {s.langToggleLabel}
+        </button>
+      </div>
+      {sliderDescOpen && <p className="legend-desc">{s.sliderDesc}</p>}
+      <div className="slider-top">
+        <button className="nav-btn" onClick={onPrev} disabled={dateIndex === 0}>
+          {s.prevArrow}
+        </button>
+        <div className="date-info">
+          <span className="date-label">{selectedDate}</span>
         </div>
-        {sliderDescOpen && <p className="legend-desc">{s.sliderDesc}</p>}
-        <div className="slider-top">
-          <button
-            className="nav-btn"
-            onClick={onPrev}
-            disabled={dateIndex === 0}
-          >
-            {s.prevArrow}
-          </button>
-          <div className="date-info">
-            <span className="date-label">{selectedDate}</span>
-          </div>
-          <button
-            className="nav-btn"
-            onClick={onNext}
-            disabled={dateIndex === dates.length - 1}
-          >
-            {s.nextArrow}
-          </button>
-        </div>
+        <button
+          className="nav-btn"
+          onClick={onNext}
+          disabled={dateIndex === dates.length - 1}
+        >
+          {s.nextArrow}
+        </button>
+      </div>
 
-        {/* ── Body ── */}
-        <>
+      {/* ── Collapse toggle ── */}
+      <button
+        className="collapse-btn"
+        onClick={() => setCollapsed((c) => !c)}
+        title={collapsed ? "Expand" : "Collapse"}
+        aria-expanded={!collapsed}
+      >
+        {collapsed ? "▾" : "▴"}
+      </button>
+
+      {/* ── Collapsible body ── */}
+      {!collapsed && (
+        <div className="panel-scroll">
           {/* ── Date slider + play/pause button ── */}
           <div className="slider-row">
             <input
@@ -375,18 +339,8 @@ const LegendPanel = memo(function LegendPanel({
               VisualAnalytics
             </a>
           </p>
-        </>
-      </div>
-      {/* end panel-scroll */}
-
-      {/* ── Resize handle ── */}
-      <div
-        className="resize-handle"
-        onMouseDown={onResizeStart}
-        onTouchStart={onResizeStart}
-      >
-        =
-      </div>
+        </div>
+      )}
     </div>
   );
 });
