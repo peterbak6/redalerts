@@ -1,6 +1,6 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import DeckGL from "@deck.gl/react";
-import { PolygonLayer, ScatterplotLayer } from "@deck.gl/layers";
+import { ScatterplotLayer } from "@deck.gl/layers";
 import { Map } from "@vis.gl/react-maplibre";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -18,7 +18,14 @@ maplibregl.setRTLTextPlugin(
 // ─── Types ───────────────────────────────────────────────────────────────────
 type Alert = { serialNumber: number; cities: string[]; timestampIso: string };
 type DayData = { day: string; count: number; alerts: Alert[] };
-type CityInfo = { id: number; lat: number; lng: number; en?: string };
+type CityInfo = {
+  id: number;
+  lat: number;
+  lng: number;
+  he?: string;
+  en?: string;
+  pop?: number;
+};
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 async function fetchJson<T>(url: string): Promise<T> {
@@ -33,66 +40,58 @@ function App() {
   const [dateIndex, setDateIndex] = useState(0);
   const [dayData, setDayData] = useState<DayData | null>(null);
   const [citiesRaw, setCitiesRaw] = useState<Record<string, CityInfo>>({});
-  const [polygonsRaw, setPolygonsRaw] = useState<
-    Record<string, [number, number][]>
-  >({});
-  const [populationRaw, setPopulationRaw] = useState<
-    Record<string, number | null>
-  >({});
   const [booting, setBooting] = useState(true);
   const [lang, setLang] = useState<Lang>("he");
   const [playing, setPlaying] = useState(false);
 
+  const dayCache = useRef(new globalThis.Map<string, DayData>());
+
   const playInterval = 789; // ms per day while playing
 
-  // Load static assets once
+  // Load dates first — unblocks the UI immediately; load cities in parallel
   useEffect(() => {
-    Promise.all([
-      fetchJson<string[]>(`${BASE}red-alert/dates.json`),
-      fetchJson<{ cities: Record<string, CityInfo> }>(
-        `${BASE}real-data/citiesList.json`,
-      ),
-      fetchJson<Record<string, [number, number][]>>(
-        `${BASE}real-data/polygonsList.json`,
-      ),
-      fetchJson<Record<string, number | null>>(
-        `${BASE}real-data/citiesPopulation.json`,
-      ),
-    ])
-      .then(([dts, cities, polygons, pop]) => {
+    fetchJson<string[]>(`${BASE}red-alert/dates.json`)
+      .then((dts) => {
         setDates(dts);
-        setCitiesRaw(cities.cities);
-        setPolygonsRaw(polygons);
-        setPopulationRaw(pop);
         setDateIndex(dts.length - 1); // start at the latest date
-        setBooting(false);
+        setBooting(false); // map is now interactive
       })
+      .catch(console.error);
+
+    fetchJson<{ cities: Record<string, CityInfo> }>(
+      `${BASE}real-data/citiesData.json`,
+    )
+      .then(({ cities }) => setCitiesRaw(cities))
       .catch(console.error);
   }, []);
 
-  // Load per-day alert data whenever the selected date changes
+  // Load per-day alert data with in-memory cache; prefetch next 2 days
   useEffect(() => {
     if (!dates.length) return;
-    fetchJson<DayData>(`${BASE}red-alert/${dates[dateIndex]}.json`)
-      .then(setDayData)
-      .catch(console.error);
+    const date = dates[dateIndex];
+    if (dayCache.current.has(date)) {
+      setDayData(dayCache.current.get(date)!);
+    } else {
+      fetchJson<DayData>(`${BASE}red-alert/${date}.json`)
+        .then((data) => {
+          dayCache.current.set(date, data);
+          setDayData(data);
+        })
+        .catch(console.error);
+    }
+    // Prefetch next 2 days silently into the cache
+    for (let i = 1; i <= 2; i++) {
+      const nextDate = dates[dateIndex + i];
+      if (nextDate && !dayCache.current.has(nextDate)) {
+        fetchJson<DayData>(`${BASE}red-alert/${nextDate}.json`)
+          .then((data) => dayCache.current.set(nextDate, data))
+          .catch(() => {});
+      }
+    }
   }, [dateIndex, dates]);
 
-  // ── Layer data ──
-  const polygonData = useMemo(
-    () =>
-      Object.values(polygonsRaw).map((coords) => ({
-        // polygonsList stores [lat, lng]; DeckGL needs [lng, lat]
-        polygon: coords.map(([lat, lng]) => [lng, lat]) as [number, number][],
-      })),
-    [polygonsRaw],
-  );
-
   // ── Zone alias map (computed once: maps sub-zone names → representative zone) ──
-  const zoneAliases = useMemo(
-    () => buildZoneAliases(citiesRaw, populationRaw),
-    [citiesRaw, populationRaw],
-  );
+  const zoneAliases = useMemo(() => buildZoneAliases(citiesRaw), [citiesRaw]);
 
   // ── All-time totals (denominator for % circles) ──
   const allCitiesCount = useMemo(
@@ -103,11 +102,8 @@ function App() {
     () =>
       Object.entries(citiesRaw)
         .filter(([name]) => !zoneAliases[name])
-        .reduce(
-          (sum, [, info]) => sum + (populationRaw[String(info.id)] ?? 0),
-          0,
-        ),
-    [citiesRaw, zoneAliases, populationRaw],
+        .reduce((sum, [, info]) => sum + (info.pop ?? 0), 0),
+    [citiesRaw, zoneAliases],
   );
 
   const cityDots = useMemo((): CityDot[] => {
@@ -157,24 +153,15 @@ function App() {
         englishName: info.en ? info.en.split(" - ")[0] : name.split(" - ")[0],
         position: [info.lng, info.lat] as [number, number],
         alertCount: counts[name] ?? 0,
-        population: populationRaw[String(info.id)] ?? 0,
+        population: info.pop ?? 0,
         times: times[name] ?? [],
       }))
       .filter((d) => d.alertCount > 0);
-  }, [citiesRaw, populationRaw, zoneAliases, dayData]);
+  }, [citiesRaw, zoneAliases, dayData]);
 
   // ── DeckGL layers ──
   const layers = useMemo(
     () => [
-      new PolygonLayer({
-        id: "polygons",
-        data: polygonData,
-        getPolygon: (d) => d.polygon,
-        getFillColor: [0, 20, 90, 80],
-        getLineColor: [0, 20, 90, 180],
-        lineWidthMinPixels: 1,
-        pickable: false,
-      }),
       new ScatterplotLayer<CityDot>({
         id: "cities",
         data: cityDots.sort((a, b) => a.alertCount - b.alertCount),
@@ -195,7 +182,7 @@ function App() {
         },
       }),
     ],
-    [polygonData, cityDots],
+    [cityDots],
   );
 
   // Advance one day every 200 ms while playing; stop at the last date

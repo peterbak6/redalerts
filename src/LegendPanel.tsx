@@ -240,11 +240,16 @@ const LegendPanel = memo(function LegendPanel({
                 label={s.cities}
                 fraction={allCitiesCount > 0 ? totalCities / allCitiesCount : 0}
                 colorRgb={
-                  ALERT_COLORS[
-                    Math.floor(
-                      (ALERT_COLORS.length * totalCities) / allCitiesCount,
-                    )
-                  ]
+                  allCitiesCount > 0
+                    ? ALERT_COLORS[
+                        Math.min(
+                          Math.floor(
+                            (ALERT_COLORS.length * totalCities) / allCitiesCount,
+                          ),
+                          ALERT_COLORS.length - 1,
+                        )
+                      ]
+                    : [100, 100, 100]
                 }
               />
               <StatCircle
@@ -254,11 +259,16 @@ const LegendPanel = memo(function LegendPanel({
                   allPopulation > 0 ? totalPopulation / allPopulation : 0
                 }
                 colorRgb={
-                  ALERT_COLORS[
-                    Math.floor(
-                      (ALERT_COLORS.length * totalPopulation) / allPopulation,
-                    )
-                  ]
+                  allPopulation > 0
+                    ? ALERT_COLORS[
+                        Math.min(
+                          Math.floor(
+                            (ALERT_COLORS.length * totalPopulation) / allPopulation,
+                          ),
+                          ALERT_COLORS.length - 1,
+                        )
+                      ]
+                    : [100, 100, 100]
                 }
               />
             </div>

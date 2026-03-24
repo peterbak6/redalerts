@@ -20,8 +20,7 @@ export const radiusFromPopulation = (pop: number): number => {
  * Single-zone cities are not included in the map.
  */
 export function buildZoneAliases(
-  citiesRaw: Record<string, { id: number }>,
-  populationRaw: Record<string, number | null>,
+  citiesRaw: Record<string, { pop?: number }>,
 ): Record<string, string> {
   // Group all city names by their base name (part before first " - ")
   const groups: Record<string, string[]> = {};
@@ -37,8 +36,8 @@ export function buildZoneAliases(
 
     // Pick the zone with the highest population as the representative
     const rep = members.reduce((best, name) => {
-      const bestPop = populationRaw[String(citiesRaw[best].id)] ?? 0;
-      const thisPop = populationRaw[String(citiesRaw[name].id)] ?? 0;
+      const bestPop = citiesRaw[best].pop ?? 0;
+      const thisPop = citiesRaw[name].pop ?? 0;
       return thisPop > bestPop ? name : best;
     });
 
