@@ -49,9 +49,9 @@ export const T: Record<Lang, Strings> = {
     tooltipPopulation: (n) => `אוכלוסייה: ${n.toLocaleString("he-IL")}`,
     tooltipTimesTitle: "שעות",
     dataSource: "מקור: צבע אדום",
-    playArrow: "◀", // triangle to the left
-    prevArrow: "→",
-    nextArrow: "←",
+    playArrow: "◀", // triangle to the right
+    prevArrow: "▶",
+    nextArrow: "◀",
   },
   en: {
     dir: "ltr",
@@ -78,7 +78,7 @@ export const T: Record<Lang, Strings> = {
     tooltipTimesTitle: "Times",
     dataSource: "Data source: Tzeva Adom",
     playArrow: "▶",
-    prevArrow: "←",
-    nextArrow: "→",
+    prevArrow: "◀",
+    nextArrow: "▶",
   },
 };

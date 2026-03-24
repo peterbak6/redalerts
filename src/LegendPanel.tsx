@@ -166,7 +166,9 @@ const LegendPanel = memo(function LegendPanel({
           {s.langToggleLabel}
         </button>
       </div>
+
       {sliderDescOpen && <p className="legend-desc">{s.sliderDesc}</p>}
+
       <div className="slider-top">
         <button className="nav-btn" onClick={onPrev} disabled={dateIndex === 0}>
           {s.prevArrow}
@@ -183,6 +185,26 @@ const LegendPanel = memo(function LegendPanel({
         </button>
       </div>
 
+      {/* ── Date slider + play/pause button ── */}
+      <div className="slider-row">
+        <input
+          type="range"
+          min={0}
+          max={dates.length - 1}
+          value={dateIndex}
+          onChange={(e) => onSliderChange(Number(e.target.value))}
+          className="date-range"
+        />
+        <button
+          className="play-btn"
+          onClick={onPlayPause}
+          title={playing ? "Pause" : "Play"}
+          aria-label={playing ? "Pause" : "Play"}
+        >
+          {playing ? "⏸" : s.playArrow}
+        </button>
+      </div>
+
       {/* ── Collapse toggle ── */}
       <button
         className="collapse-btn"
@@ -196,26 +218,6 @@ const LegendPanel = memo(function LegendPanel({
       {/* ── Collapsible body ── */}
       {!collapsed && (
         <div className="panel-scroll">
-          {/* ── Date slider + play/pause button ── */}
-          <div className="slider-row">
-            <input
-              type="range"
-              min={0}
-              max={dates.length - 1}
-              value={dateIndex}
-              onChange={(e) => onSliderChange(Number(e.target.value))}
-              className="date-range"
-            />
-            <button
-              className="play-btn"
-              onClick={onPlayPause}
-              title={playing ? "Pause" : "Play"}
-              aria-label={playing ? "Pause" : "Play"}
-            >
-              {playing ? "⏸" : s.playArrow}
-            </button>
-          </div>
-
           {/* ── Exposure info ── */}
           <div className="exposure-info">
             <div className="legend-section-row">
