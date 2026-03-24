@@ -247,7 +247,14 @@ function App() {
         onNext={next}
         onSliderChange={setDateIndex}
         onLangChange={setLang}
-        onPlayPause={() => setPlaying((p) => !p)}
+        onPlayPause={() => {
+          setPlaying((p) => {
+            if (!p && dateIndex >= dates.length - 1) {
+              setDateIndex(Math.max(0, dates.length - 8));
+            }
+            return !p;
+          });
+        }}
       />
 
       {/* ── Map ── */}

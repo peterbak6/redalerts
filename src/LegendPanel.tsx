@@ -147,15 +147,17 @@ const LegendPanel = memo(function LegendPanel({
     <div className="slider-panel" dir={s.dir}>
       {/* ── Header: title + language toggle ── */}
       <div className="panel-header">
-        <h1 className="panel-title">{s.title}</h1>
-        <button
-          className="info-btn"
-          title={s.sliderDesc}
-          onClick={() => setSliderDescOpen((o) => !o)}
-          aria-label="info"
-        >
-          ⓘ
-        </button>
+        <h1 className="panel-title">
+          {s.title}
+          <button
+            className="info-btn"
+            title={s.sliderDesc}
+            onClick={() => setSliderDescOpen((o) => !o)}
+            aria-label="info"
+          >
+            ⓘ
+          </button>
+        </h1>
         <button
           className="lang-toggle"
           onClick={() => onLangChange(nextLang)}
