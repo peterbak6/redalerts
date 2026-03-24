@@ -244,7 +244,8 @@ const LegendPanel = memo(function LegendPanel({
                     ? ALERT_COLORS[
                         Math.min(
                           Math.floor(
-                            (ALERT_COLORS.length * totalCities) / allCitiesCount,
+                            (ALERT_COLORS.length * totalCities) /
+                              allCitiesCount,
                           ),
                           ALERT_COLORS.length - 1,
                         )
@@ -263,7 +264,8 @@ const LegendPanel = memo(function LegendPanel({
                     ? ALERT_COLORS[
                         Math.min(
                           Math.floor(
-                            (ALERT_COLORS.length * totalPopulation) / allPopulation,
+                            (ALERT_COLORS.length * totalPopulation) /
+                              allPopulation,
                           ),
                           ALERT_COLORS.length - 1,
                         )
