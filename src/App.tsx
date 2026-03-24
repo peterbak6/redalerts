@@ -28,8 +28,8 @@ type CityInfo = {
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(url);
+async function fetchJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+  const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`${res.status} ${url}`);
   return res.json();
 }
@@ -47,6 +47,7 @@ function App() {
   const dayCache = useRef(new globalThis.Map<string, DayData>());
   const latestRequestedDate = useRef<string>("");
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fetchAbort = useRef<AbortController | null>(null);
 
   const playInterval = 789; // ms per day while playing
 
@@ -83,14 +84,21 @@ function App() {
     // Debounce the fetch so rapid slider movement skips intermediate requests
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(() => {
+      // Abort any previous in-flight request before starting a new one
+      fetchAbort.current?.abort();
+      const controller = new AbortController();
+      fetchAbort.current = controller;
+
       latestRequestedDate.current = date;
-      fetchJson<DayData>(`${BASE}red-alert/${date}.json`)
+      fetchJson<DayData>(`${BASE}red-alert/${date}.json`, controller.signal)
         .then((data) => {
           dayCache.current.set(date, data);
           // Ignore if the user has already moved to a different date
           if (latestRequestedDate.current === date) setDayData(data);
         })
-        .catch(console.error);
+        .catch((err) => {
+          if (err?.name !== "AbortError") console.error(err);
+        });
 
       // Prefetch next 2 days silently into the cache
       for (let i = 1; i <= 2; i++) {
