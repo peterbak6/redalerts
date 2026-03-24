@@ -45,6 +45,8 @@ function App() {
   const [playing, setPlaying] = useState(false);
 
   const dayCache = useRef(new globalThis.Map<string, DayData>());
+  const latestRequestedDate = useRef<string>("");
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const playInterval = 789; // ms per day while playing
 
@@ -65,29 +67,41 @@ function App() {
       .catch(console.error);
   }, []);
 
-  // Load per-day alert data with in-memory cache; prefetch next 2 days
+  // Load per-day alert data with in-memory cache; prefetch next 2 days.
+  // Debounced (80 ms) + stale-check so fast scrubbing skips intermediate days.
   useEffect(() => {
     if (!dates.length) return;
     const date = dates[dateIndex];
+
+    // Serve from cache immediately — no debounce needed
     if (dayCache.current.has(date)) {
+      latestRequestedDate.current = date;
       setDayData(dayCache.current.get(date)!);
-    } else {
+      return;
+    }
+
+    // Debounce the fetch so rapid slider movement skips intermediate requests
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      latestRequestedDate.current = date;
       fetchJson<DayData>(`${BASE}red-alert/${date}.json`)
         .then((data) => {
           dayCache.current.set(date, data);
-          setDayData(data);
+          // Ignore if the user has already moved to a different date
+          if (latestRequestedDate.current === date) setDayData(data);
         })
         .catch(console.error);
-    }
-    // Prefetch next 2 days silently into the cache
-    for (let i = 1; i <= 2; i++) {
-      const nextDate = dates[dateIndex + i];
-      if (nextDate && !dayCache.current.has(nextDate)) {
-        fetchJson<DayData>(`${BASE}red-alert/${nextDate}.json`)
-          .then((data) => dayCache.current.set(nextDate, data))
-          .catch(() => {});
+
+      // Prefetch next 2 days silently into the cache
+      for (let i = 1; i <= 2; i++) {
+        const nextDate = dates[dateIndex + i];
+        if (nextDate && !dayCache.current.has(nextDate)) {
+          fetchJson<DayData>(`${BASE}red-alert/${nextDate}.json`)
+            .then((data) => dayCache.current.set(nextDate, data))
+            .catch(() => {});
+        }
       }
-    }
+    }, 80);
   }, [dateIndex, dates]);
 
   // ── Zone alias map (computed once: maps sub-zone names → representative zone) ──
@@ -250,6 +264,7 @@ function App() {
         controller
         layers={layers}
         style={{ width: "100%", height: "100%" }}
+        pickingRadius={12}
         getTooltip={({ object, x, y }) => buildTooltip(object, lang, x, y)}
       >
         <Map mapStyle={MAP_STYLE} attributionControl={{ compact: true }} />
