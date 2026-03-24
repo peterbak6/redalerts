@@ -30,7 +30,7 @@ export const T: Record<Lang, Strings> = {
     langToggleLabel: "EN",
     title: "התראות צבע אדום",
     sliderDesc:
-      "הזיזו את הסליידר כדי לעיין בהתראות לפי תאריך שהיו בו אזעקות. מוצגים רק תאריכים שעבורם קיים מידע. כל עיגול מייצג עיר שבה הופעלה התראה.",
+      "הזיזו את הסליידר כדי לעיין בהתראות לפי תאריך, כאשר ההתראות הופעלו. כל עיגול מייצג עיר שבה הופעלה התראה.",
     exposureTitle: "חשיפה",
     exposureDesc:
       "מספר ההתראות ברחבי הארץ, ומספר היישובים והאוכלוסייה שבהם הופעלה לפחות התראה אחת",
@@ -58,7 +58,7 @@ export const T: Record<Lang, Strings> = {
     title: "Red Alerts",
     langToggleLabel: "עב",
     sliderDesc:
-      "Move the slider to explore alerts by date, when alerts were triggered. Only dates with available data are shown. Each circle marks a city where an alert was triggered.",
+      "Move the slider to explore alerts by date, when alerts were triggered. Each circle marks a city where an alert was triggered.",
     exposureTitle: "Exposure",
     exposureDesc:
       "Number of alerts across the country, and the number of places and population where at least one alert was triggered.",
