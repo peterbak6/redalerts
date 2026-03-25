@@ -1,5 +1,7 @@
-# Red-alert daily JSON files — today's file updates every 3h, old ones are immutable
-# max-age=10800 (3h) matches the fetch schedule; old files return 304 with no body
+# Red-alert daily JSON files — today's and yesterday's can be rewritten by the
+# cron job every 3h; older files are immutable but we can't express that here.
+# max-age=10800 matches the cron schedule and covers a typical browsing session,
+# so history scrubbing serves files from browser cache without roundtrips.
 /red-alert/*
   Cache-Control: public, max-age=10800
 
