@@ -336,7 +336,7 @@ const LegendPanel = memo(function LegendPanel({
           <div className="panel-divider" />
           <a
             className="data-source-link"
-            href="https://www.tzevaadom.co.il/static/historical/all.json"
+            href="https://www.tzevaadom.co.il"
             target="_blank"
             rel="noopener noreferrer"
           >
