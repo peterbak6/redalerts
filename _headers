@@ -15,5 +15,5 @@
   Cache-Control: public, max-age=31536000, immutable
 
 # HTML entry point — short cache so deploys propagate quickly
-/*
+/index.html
   Cache-Control: public, max-age=0, must-revalidate
