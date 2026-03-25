@@ -141,31 +141,63 @@ const LegendPanel = memo(function LegendPanel({
   const s = T[lang];
   const nextLang: Lang = lang === "he" ? "en" : "he";
   const [sliderDescOpen, setSliderDescOpen] = useState(false);
-  const [legendOpen, setLegendOpen] = useState(() => window.innerWidth >= 768);
+  const [collapsed, setCollapsed] = useState(() => window.innerWidth < 768);
 
   return (
-    <>
-      {/* ── Top nav bar: date navigation + slider + play ── */}
-      <div className="nav-bar" dir={s.dir}>
-        <div className="nav-bar-row">
-          <div className="nav-bar-date-row">
-            <button
-              className="nav-btn"
-              onClick={onPrev}
-              disabled={dateIndex === 0}
-            >
-              {s.prevArrow}
-            </button>
-            <span className="date-label">{selectedDate}</span>
-            <button
-              className="nav-btn"
-              onClick={onNext}
-              disabled={dateIndex === dates.length - 1}
-            >
-              {s.nextArrow}
-            </button>
-          </div>
-          <div className="nav-bar-slider-row">
+    <div className="slider-panel" dir={s.dir}>
+      {/* ── Header: title + language toggle ── */}
+      <div className="panel-header">
+        <h1 className="panel-title">
+          {s.title}
+          <button
+            className="info-btn"
+            title={s.sliderDesc}
+            onClick={() => setSliderDescOpen((o) => !o)}
+            aria-label="info"
+          >
+            ⓘ
+          </button>
+        </h1>
+        <button
+          className="lang-toggle"
+          onClick={() => onLangChange(nextLang)}
+          title={lang === "he" ? "Switch to English" : "עבור לעברית"}
+        >
+          {s.langToggleLabel}
+        </button>
+      </div>
+      {sliderDescOpen && <p className="legend-desc">{s.sliderDesc}</p>}
+      <div className="slider-top">
+        <button className="nav-btn" onClick={onPrev} disabled={dateIndex === 0}>
+          {s.prevArrow}
+        </button>
+        <div className="date-info">
+          <span className="date-label">{selectedDate}</span>
+        </div>
+        <button
+          className="nav-btn"
+          onClick={onNext}
+          disabled={dateIndex === dates.length - 1}
+        >
+          {s.nextArrow}
+        </button>
+      </div>
+
+      {/* ── Collapse toggle ── */}
+      <button
+        className="collapse-btn"
+        onClick={() => setCollapsed((c) => !c)}
+        title={collapsed ? "Expand" : "Collapse"}
+        aria-expanded={!collapsed}
+      >
+        {collapsed ? "▾" : "▴"}
+      </button>
+
+      {/* ── Collapsible body ── */}
+      {!collapsed && (
+        <div className="panel-scroll">
+          {/* ── Date slider + play/pause button ── */}
+          <div className="slider-row">
             <input
               type="range"
               min={0}
@@ -183,189 +215,147 @@ const LegendPanel = memo(function LegendPanel({
               {playing ? "⏸" : s.playArrow}
             </button>
           </div>
-        </div>
-      </div>
 
-      {/* ── Right-side legend drawer ── */}
-      <div className="legend-drawer-wrap" dir="ltr">
-        {legendOpen && (
-          <div className="legend-drawer" dir={s.dir}>
-            {/* ── Header: title + language toggle ── */}
-            <div className="panel-header">
-              <h1 className="panel-title">
-                {s.title}
-                <button
-                  className="info-btn"
-                  title={s.sliderDesc}
-                  onClick={() => setSliderDescOpen((o) => !o)}
-                  aria-label="info"
+          {/* ── Exposure info ── */}
+          <div className="exposure-info">
+            <div className="legend-section-row">
+              <p className="legend-section-title">{s.exposureTitle}</p>
+              <InfoTip text={s.exposureDesc} />
+            </div>
+            <div className="stat-circles">
+              <StatCircle
+                value={totalAlerts.toLocaleString()}
+                label={s.alerts}
+                fraction={1}
+                colorRgb={
+                  maxAlertCount > 0
+                    ? ALERT_COLORS[
+                        Math.min(maxAlertCount - 1, ALERT_COLORS.length - 1)
+                      ]
+                    : [100, 100, 100]
+                }
+              />
+              <StatCircle
+                value={totalCities.toLocaleString()}
+                label={s.cities}
+                fraction={allCitiesCount > 0 ? totalCities / allCitiesCount : 0}
+                colorRgb={
+                  allCitiesCount > 0
+                    ? ALERT_COLORS[
+                        Math.min(
+                          Math.floor(
+                            (ALERT_COLORS.length * totalCities) /
+                              allCitiesCount,
+                          ),
+                          ALERT_COLORS.length - 1,
+                        )
+                      ]
+                    : [100, 100, 100]
+                }
+              />
+              <StatCircle
+                value={humanReadableCount(totalPopulation)}
+                label={s.people}
+                fraction={
+                  allPopulation > 0 ? totalPopulation / allPopulation : 0
+                }
+                colorRgb={
+                  allPopulation > 0
+                    ? ALERT_COLORS[
+                        Math.min(
+                          Math.floor(
+                            (ALERT_COLORS.length * totalPopulation) /
+                              allPopulation,
+                          ),
+                          ALERT_COLORS.length - 1,
+                        )
+                      ]
+                    : [100, 100, 100]
+                }
+              />
+            </div>
+          </div>
+
+          {/* ── Color legend ── */}
+          {/* <div className="panel-divider" /> */}
+          <div className="legend-section-row">
+            <p className="legend-section-title">{s.alertFreqTitle}</p>
+            <InfoTip text={s.alertFreqDesc} />
+          </div>
+          <div className="legend">
+            <span className="legend-label">1</span>
+            {ALERT_COLORS.map((rgb, i) => (
+              <span
+                key={i}
+                className="legend-cell"
+                style={{ background: `rgb(${rgb[0]},${rgb[1]},${rgb[2]})` }}
+                title={i < 8 ? String(i + 1) : "9+"}
+              />
+            ))}
+            <span className="legend-label" style={{ marginLeft: "auto" }}>
+              9+
+            </span>
+          </div>
+
+          {/* ── Size legend ── */}
+          <div className="panel-divider" />
+          <div className="legend-section-row">
+            <p className="legend-section-title">{s.popSizeTitle}</p>
+            <InfoTip text={`${s.popSizeDesc} ${s.closingDesc}`} />
+          </div>
+          <svg
+            viewBox="0 0 280 80"
+            width="100%"
+            style={{ display: "block" }}
+            className="size-legend-svg"
+            aria-hidden="true"
+          >
+            {SIZE_SAMPLES.map(({ r, cx, label }) => (
+              <g key={cx}>
+                <circle
+                  cx={cx}
+                  cy={62 - r}
+                  r={r}
+                  fill="none"
+                  stroke="rgba(255,255,255,0.55)"
+                  strokeWidth={1}
+                />
+                <text
+                  x={cx}
+                  y={76}
+                  textAnchor="middle"
+                  fontSize="8"
+                  fill="rgba(255,255,255,0.4)"
                 >
-                  ⓘ
-                </button>
-              </h1>
-              <button
-                className="lang-toggle"
-                onClick={() => onLangChange(nextLang)}
-                title={lang === "he" ? "Switch to English" : "עבור לעברית"}
-              >
-                {s.langToggleLabel}
-              </button>
-            </div>
-            {sliderDescOpen && <p className="legend-desc">{s.sliderDesc}</p>}
-
-            {/* ── Exposure info ── */}
-            <div className="exposure-info">
-              <div className="legend-section-row">
-                <p className="legend-section-title">{s.exposureTitle}</p>
-                <InfoTip text={s.exposureDesc} />
-              </div>
-              <div className="stat-circles">
-                <StatCircle
-                  value={totalAlerts.toLocaleString()}
-                  label={s.alerts}
-                  fraction={1}
-                  colorRgb={
-                    maxAlertCount > 0
-                      ? ALERT_COLORS[
-                          Math.min(maxAlertCount - 1, ALERT_COLORS.length - 1)
-                        ]
-                      : [100, 100, 100]
-                  }
-                />
-                <StatCircle
-                  value={totalCities.toLocaleString()}
-                  label={s.cities}
-                  fraction={
-                    allCitiesCount > 0 ? totalCities / allCitiesCount : 0
-                  }
-                  colorRgb={
-                    allCitiesCount > 0
-                      ? ALERT_COLORS[
-                          Math.min(
-                            Math.floor(
-                              (ALERT_COLORS.length * totalCities) /
-                                allCitiesCount,
-                            ),
-                            ALERT_COLORS.length - 1,
-                          )
-                        ]
-                      : [100, 100, 100]
-                  }
-                />
-                <StatCircle
-                  value={humanReadableCount(totalPopulation)}
-                  label={s.people}
-                  fraction={
-                    allPopulation > 0 ? totalPopulation / allPopulation : 0
-                  }
-                  colorRgb={
-                    allPopulation > 0
-                      ? ALERT_COLORS[
-                          Math.min(
-                            Math.floor(
-                              (ALERT_COLORS.length * totalPopulation) /
-                                allPopulation,
-                            ),
-                            ALERT_COLORS.length - 1,
-                          )
-                        ]
-                      : [100, 100, 100]
-                  }
-                />
-              </div>
-            </div>
-
-            {/* ── Color legend ── */}
-            <div className="legend-section-row">
-              <p className="legend-section-title">{s.alertFreqTitle}</p>
-              <InfoTip text={s.alertFreqDesc} />
-            </div>
-            <div className="legend">
-              <span className="legend-label">1</span>
-              {ALERT_COLORS.map((rgb, i) => (
-                <span
-                  key={i}
-                  className="legend-cell"
-                  style={{ background: `rgb(${rgb[0]},${rgb[1]},${rgb[2]})` }}
-                  title={i < 8 ? String(i + 1) : "9+"}
-                />
-              ))}
-              <span className="legend-label" style={{ marginLeft: "auto" }}>
-                9+
-              </span>
-            </div>
-
-            {/* ── Size legend ── */}
-            <div className="panel-divider" />
-            <div className="legend-section-row">
-              <p className="legend-section-title">{s.popSizeTitle}</p>
-              <InfoTip text={`${s.popSizeDesc} ${s.closingDesc}`} />
-            </div>
-            <svg
-              viewBox="0 0 280 80"
-              width="100%"
-              style={{ display: "block" }}
-              className="size-legend-svg"
-              aria-hidden="true"
-            >
-              {SIZE_SAMPLES.map(({ r, cx, label }) => (
-                <g key={cx}>
-                  <circle
-                    cx={cx}
-                    cy={62 - r}
-                    r={r}
-                    fill="none"
-                    stroke="rgba(255,255,255,0.55)"
-                    strokeWidth={1}
-                  />
-                  <text
-                    x={cx}
-                    y={76}
-                    textAnchor="middle"
-                    fontSize="8"
-                    fill="rgba(255,255,255,0.4)"
-                  >
-                    {label}
-                  </text>
-                </g>
-              ))}
-            </svg>
-
-            {/* ── Footer: data source ── */}
-            <div className="panel-divider" />
+                  {label}
+                </text>
+              </g>
+            ))}
+          </svg>
+          {/* ── Footer: data source ── */}
+          <div className="panel-divider" />
+          <a
+            className="data-source-link"
+            href="https://www.tzevaadom.co.il/static/historical/all.json"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {s.dataSource}
+          </a>
+          <p className="data-source-link" style={{ opacity: 0.65 }}>
+            © 2026 Peter Bak ·{" "}
             <a
-              className="data-source-link"
-              href="https://www.tzevaadom.co.il/static/historical/all.json"
+              href="https://visualanalytics.co.il"
               target="_blank"
               rel="noopener noreferrer"
+              style={{ color: "inherit", textDecoration: "underline" }}
             >
-              {s.dataSource}
+              VisualAnalytics
             </a>
-            <p className="data-source-link" style={{ opacity: 0.65 }}>
-              © 2026 Peter Bak ·{" "}
-              <a
-                href="https://visualanalytics.co.il"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: "inherit", textDecoration: "underline" }}
-              >
-                VisualAnalytics
-              </a>
-            </p>
-          </div>
-        )}
-
-        {/* ── Toggle tab ── */}
-        <button
-          className="legend-toggle-btn"
-          onClick={() => setLegendOpen((o) => !o)}
-          title={legendOpen ? "Collapse legend" : "Expand legend"}
-          aria-expanded={legendOpen}
-        >
-          {legendOpen ? "›" : "‹"}
-        </button>
-      </div>
-    </>
+          </p>
+        </div>
+      )}
+    </div>
   );
 });
 
