@@ -78,6 +78,7 @@ const SIZE_SAMPLES: { r: number; cx: number; label: string }[] = [
 interface LegendPanelProps {
   dates: string[];
   dateIndex: number;
+  currentDate: string | null;
   totalAlerts: number;
   totalCities: number;
   totalPopulation: number;
@@ -123,6 +124,7 @@ const humanReadableCount = (count: number): string => {
 const LegendPanel = memo(function LegendPanel({
   dates,
   dateIndex,
+  currentDate,
   totalAlerts,
   totalCities,
   totalPopulation,
@@ -137,7 +139,7 @@ const LegendPanel = memo(function LegendPanel({
   onLangChange,
   onPlayPause,
 }: LegendPanelProps) {
-  const selectedDate = dates[dateIndex];
+  const selectedDate = currentDate ?? dates[dateIndex];
   const s = T[lang];
   const nextLang: Lang = lang === "he" ? "en" : "he";
   const [sliderDescOpen, setSliderDescOpen] = useState(false);

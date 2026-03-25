@@ -244,6 +244,7 @@ function App() {
       <LegendPanel
         dates={dates}
         dateIndex={dateIndex}
+        currentDate={dayData?.day ?? null}
         totalAlerts={totalAlerts}
         totalCities={totalCities}
         totalPopulation={totalPopulation}
