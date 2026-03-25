@@ -1,6 +1,7 @@
-# Immutable red-alert daily JSON files — content never changes once published
+# Red-alert daily JSON files — today's file updates every 3h, old ones are immutable
+# max-age=10800 (3h) matches the fetch schedule; old files return 304 with no body
 /red-alert/*
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, max-age=10800
 
 # Static real-data files — never change
 /real-data/*
