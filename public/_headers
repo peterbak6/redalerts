@@ -1,0 +1,19 @@
+# Immutable red-alert daily JSON files — content never changes once published
+/red-alert/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Static real-data files — never change
+/real-data/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Vite-fingerprinted JS/CSS assets — immutable
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# RTL text plugin — static library, immutable
+/mapbox-gl-rtl-text.js
+  Cache-Control: public, max-age=31536000, immutable
+
+# HTML entry point — short cache so deploys propagate quickly
+/*
+  Cache-Control: public, max-age=0, must-revalidate

@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile, access } from "node:fs/promises";
 import path from "node:path";
 
 type RawAlertTuple = [unknown, unknown, unknown, unknown];
@@ -125,7 +125,22 @@ async function main() {
 
   await mkdir(outDir, { recursive: true });
 
+  const todayUtc = new Date().toISOString().slice(0, 10);
+
   for (const [day, alerts] of byDay.entries()) {
+    const filePath = path.join(outDir, `${day}.json`);
+
+    // Skip days that already exist on disk and are not today —
+    // historical data is immutable so no need to rewrite it.
+    if (day !== todayUtc) {
+      try {
+        await access(filePath);
+        continue; // file exists, skip
+      } catch {
+        // file doesn't exist yet, fall through to write
+      }
+    }
+
     const payload = {
       day,
       count: alerts.length,
@@ -134,16 +149,11 @@ async function main() {
       alerts,
     };
 
-    await writeFile(
-      path.join(outDir, `${day}.json`),
-      JSON.stringify(payload),
-      "utf8",
-    );
+    await writeFile(filePath, JSON.stringify(payload), "utf8");
   }
 
   const index = {
     sourceUrl: url,
-    generatedAt: new Date().toISOString(),
     totalRawRecords: parsed.length,
     totalNormalizedRecords: normalized.length,
     totalSkippedRecords: skipped.length,
