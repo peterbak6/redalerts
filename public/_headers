@@ -3,11 +3,11 @@
 /red-alert/dates.json
   Cache-Control: no-cache
 
-# Daily JSON files — validated on every request (304 Fast if unchanged).
-# In-app dayCache handles session-level caching for historical dates;
-# the latest date is intentionally never cached so new alerts appear immediately.
+# Historical daily JSON files — immutable once written; long cache is safe.
+# The latest date is handled in-app with fetch cache:'no-cache' so the CDN
+# header here doesn't matter for freshness — but it keeps history scrubbing fast.
 /red-alert/*
-  Cache-Control: no-cache
+  Cache-Control: public, max-age=31536000, immutable
 
 # Static real-data files — never change
 /real-data/*

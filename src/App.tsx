@@ -80,7 +80,9 @@ function App() {
   useEffect(() => {
     if (!dates.length) return;
     const date = dates[dateIndex];
-    const isLatest = dateIndex === dates.length - 1;
+    // Cover the last 2 dates: Israel is UTC+2/+3 and the cron runs every 3h,
+    // so yesterday's file can still receive new alerts after local midnight.
+    const isLatest = dateIndex >= dates.length - 2;
 
     // Serve from cache immediately — no debounce needed.
     // Skip for the latest date: its file is updated by cron and must stay fresh.
