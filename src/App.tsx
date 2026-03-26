@@ -28,8 +28,15 @@ type CityInfo = {
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-async function fetchJson<T>(url: string, signal?: AbortSignal): Promise<T> {
-  const res = await fetch(url, { signal });
+async function fetchJson<T>(
+  url: string,
+  signal?: AbortSignal,
+  cacheMode?: RequestCache,
+): Promise<T> {
+  const res = await fetch(url, {
+    signal,
+    ...(cacheMode ? { cache: cacheMode } : {}),
+  });
   if (!res.ok) throw new Error(`${res.status} ${url}`);
   return res.json();
 }
@@ -73,9 +80,11 @@ function App() {
   useEffect(() => {
     if (!dates.length) return;
     const date = dates[dateIndex];
+    const isLatest = dateIndex === dates.length - 1;
 
-    // Serve from cache immediately — no debounce needed
-    if (dayCache.current.has(date)) {
+    // Serve from cache immediately — no debounce needed.
+    // Skip for the latest date: its file is updated by cron and must stay fresh.
+    if (!isLatest && dayCache.current.has(date)) {
       latestRequestedDate.current = date;
       setDayData(dayCache.current.get(date)!);
       return;
@@ -90,9 +99,16 @@ function App() {
       fetchAbort.current = controller;
 
       latestRequestedDate.current = date;
-      fetchJson<DayData>(`${BASE}red-alert/${date}.json`, controller.signal)
+      // For the latest date, bypass both browser and CDN cache so we always
+      // get the most recent data (the file is rewritten by the cron job).
+      fetchJson<DayData>(
+        `${BASE}red-alert/${date}.json`,
+        controller.signal,
+        isLatest ? "no-cache" : undefined,
+      )
         .then((data) => {
-          dayCache.current.set(date, data);
+          // Don't cache the latest date in memory — it changes throughout the day
+          if (!isLatest) dayCache.current.set(date, data);
           // Ignore if the user has already moved to a different date
           if (latestRequestedDate.current === date) setDayData(data);
         })

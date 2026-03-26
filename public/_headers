@@ -3,11 +3,11 @@
 /red-alert/dates.json
   Cache-Control: no-cache
 
-# Daily JSON files — max-age=10800 matches the 3h cron schedule and keeps
-# history scrubbing fast (served from browser cache without roundtrips).
-# today's and yesterday's files can be rewritten; older ones are immutable.
+# Daily JSON files — validated on every request (304 Fast if unchanged).
+# In-app dayCache handles session-level caching for historical dates;
+# the latest date is intentionally never cached so new alerts appear immediately.
 /red-alert/*
-  Cache-Control: public, max-age=10800
+  Cache-Control: no-cache
 
 # Static real-data files — never change
 /real-data/*
