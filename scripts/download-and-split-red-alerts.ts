@@ -125,10 +125,15 @@ async function main() {
 
   await mkdir(outDir, { recursive: true });
 
-  const todayIL = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
+  const todayIL = new Date().toLocaleDateString("en-CA", {
+    timeZone: "Asia/Jerusalem",
+  });
   // Yesterday IL may still receive late alerts that were missed when its file
   // was last written, so rewrite it once more.
-  const yesterdayIL = new Date(Date.now() - 86_400_000).toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
+  const yesterdayIL = new Date(Date.now() - 86_400_000).toLocaleDateString(
+    "en-CA",
+    { timeZone: "Asia/Jerusalem" },
+  );
 
   for (const [day, alerts] of byDay.entries()) {
     const filePath = path.join(outDir, `${day}.json`);
