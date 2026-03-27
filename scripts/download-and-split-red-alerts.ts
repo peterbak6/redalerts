@@ -60,7 +60,7 @@ function normalizeTuple(
   if (Number.isNaN(d.getTime())) return null;
 
   const timestampIso = d.toISOString();
-  const day = timestampIso.slice(0, 10);
+  const day = d.toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" }); // YYYY-MM-DD in IL time
 
   return {
     day,
@@ -125,19 +125,17 @@ async function main() {
 
   await mkdir(outDir, { recursive: true });
 
-  const todayUtc = new Date().toISOString().slice(0, 10);
-  // Yesterday UTC may still receive late alerts (20:00–24:00 UTC window) that
-  // were missed when its file was last written, so rewrite it once more.
-  const yesterdayUtc = new Date(Date.now() - 86_400_000)
-    .toISOString()
-    .slice(0, 10);
+  const todayIL = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
+  // Yesterday IL may still receive late alerts that were missed when its file
+  // was last written, so rewrite it once more.
+  const yesterdayIL = new Date(Date.now() - 86_400_000).toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
 
   for (const [day, alerts] of byDay.entries()) {
     const filePath = path.join(outDir, `${day}.json`);
 
     // Skip days that already exist on disk and are not today or yesterday —
     // historical data is immutable so no need to rewrite it.
-    if (day !== todayUtc && day !== yesterdayUtc) {
+    if (day !== todayIL && day !== yesterdayIL) {
       try {
         await access(filePath);
         continue; // file exists, skip
