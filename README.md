@@ -4,7 +4,12 @@ An interactive map visualizing rocket alert (צבע אדום) data across Israel
 
 **Live:**
 [redalerts.pages.dev](https://redalerts.pages.dev)
+
+**Github:**
 [peterbak6.github.io/redalerts](https://peterbak6.github.io/redalerts)
+
+**Website:**
+[https://visualanalytics.co.il/redalerts](https://visualanalytics.co.il/redalerts)
 
 ## Features
 
