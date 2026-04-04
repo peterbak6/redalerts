@@ -1,0 +1,49 @@
+.dual-range-slider {
+    width: 100%;
+    user-select: none;
+}
+
+.dual-range-slider__track {
+    position: relative;
+    width: 100%;
+    height: 32px;
+}
+
+.dual-range-slider__rail {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 6px;
+    transform: translateY(-50%);
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.dual-range-slider__range {
+    position: absolute;
+    top: 50%;
+    height: 6px;
+    transform: translateY(-50%);
+    border-radius: 3px;
+    background: #fc4e2a;
+    cursor: grab;
+}
+
+.dual-range-slider__range:active {
+    cursor: grabbing;
+}
+
+.dual-range-slider__handle {
+    position: absolute;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: #fc4e2a;
+    border: 2px solid #fff;
+    cursor: pointer;
+    touch-action: none;
+    box-sizing: border-box;
+}

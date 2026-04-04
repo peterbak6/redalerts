@@ -323,6 +323,35 @@ html, body, #root {
   flex-shrink: 0;
 }
 
+/* ── Date range bar (v2) ── */
+.date-range-bar {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 33.333vw;
+  min-width: 300px;
+  z-index: 10;
+  background: rgba(8, 10, 22, 0.65);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 10px 16px 8px;
+  color: #fff;
+  user-select: none;
+}
+
+.date-range-bar__labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+  opacity: 0.9;
+}
+
 /* ── Tooltip ── */
 /* DeckGL tooltip container — override via inline style in getTooltip */
 /* Inner content classes: */

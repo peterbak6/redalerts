@@ -1,14 +1,13 @@
-import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import DeckGL from "@deck.gl/react";
 import { ScatterplotLayer } from "@deck.gl/layers";
 import { Map } from "@vis.gl/react-maplibre";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import LegendPanel from "./LegendPanel";
+import DateRangeBar from "./DateRangeBar";
 import { buildTooltip, type CityDot } from "./TooltipPanel";
 import { BASE, MAP_STYLE, INITIAL_VIEW_STATE } from "./constants";
 import { alertColor, radiusFromPopulation, buildZoneAliases } from "./utils";
-import { type Lang } from "./i18n";
 
 maplibregl.setRTLTextPlugin(
   `${window.location.origin}${import.meta.env.BASE_URL}mapbox-gl-rtl-text.js`,
@@ -44,26 +43,25 @@ async function fetchJson<T>(
 // ─── App ─────────────────────────────────────────────────────────────────────
 function App() {
   const [dates, setDates] = useState<string[]>([]);
-  const [dateIndex, setDateIndex] = useState(0);
+  const [rangeA, setRangeA] = useState(0);
+  const [rangeB, setRangeB] = useState(0);
   const [dayData, setDayData] = useState<DayData | null>(null);
   const [citiesRaw, setCitiesRaw] = useState<Record<string, CityInfo>>({});
   const [booting, setBooting] = useState(true);
-  const [lang, setLang] = useState<Lang>("he");
-  const [playing, setPlaying] = useState(false);
 
   const dayCache = useRef(new globalThis.Map<string, DayData>());
   const latestRequestedDate = useRef<string>("");
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fetchAbort = useRef<AbortController | null>(null);
 
-  const playInterval = 789; // ms per day while playing
-
   // Load dates first — unblocks the UI immediately; load cities in parallel
   useEffect(() => {
     fetchJson<string[]>(`${BASE}red-alert/dates.json`)
       .then((dts) => {
         setDates(dts);
-        setDateIndex(dts.length - 1); // start at the latest date
+        const defaultStart = dts.findIndex((d) => d >= "2026-02-28");
+        setRangeA(defaultStart === -1 ? 0 : defaultStart);
+        setRangeB(dts.length - 1);
         setBooting(false); // map is now interactive
       })
       .catch(console.error);
@@ -75,14 +73,15 @@ function App() {
       .catch(console.error);
   }, []);
 
-  // Load per-day alert data with in-memory cache; prefetch next 2 days.
+  // Fetch data for the "to" end of the selected range (visual mapping changes in next step).
   // Debounced (80 ms) + stale-check so fast scrubbing skips intermediate days.
   useEffect(() => {
     if (!dates.length) return;
-    const date = dates[dateIndex];
+    const toIndex = Math.max(rangeA, rangeB);
+    const date = dates[toIndex];
     // Cover the last 2 dates: Israel is UTC+2/+3 and the cron runs every 3h,
     // so yesterday's file can still receive new alerts after local midnight.
-    const isLatest = dateIndex >= dates.length - 2;
+    const isLatest = toIndex >= dates.length - 2;
 
     // Serve from cache immediately — no debounce needed.
     // Skip for the latest date: its file is updated by cron and must stay fresh.
@@ -117,34 +116,11 @@ function App() {
         .catch((err) => {
           if (err?.name !== "AbortError") console.error(err);
         });
-
-      // Prefetch next 2 days silently into the cache
-      for (let i = 1; i <= 2; i++) {
-        const nextDate = dates[dateIndex + i];
-        if (nextDate && !dayCache.current.has(nextDate)) {
-          fetchJson<DayData>(`${BASE}red-alert/${nextDate}.json`)
-            .then((data) => dayCache.current.set(nextDate, data))
-            .catch(() => {});
-        }
-      }
     }, 80);
-  }, [dateIndex, dates]);
+  }, [rangeA, rangeB, dates]);
 
   // ── Zone alias map (computed once: maps sub-zone names → representative zone) ──
   const zoneAliases = useMemo(() => buildZoneAliases(citiesRaw), [citiesRaw]);
-
-  // ── All-time totals (denominator for % circles) ──
-  const allCitiesCount = useMemo(
-    () => Object.keys(citiesRaw).filter((name) => !zoneAliases[name]).length,
-    [citiesRaw, zoneAliases],
-  );
-  const allPopulation = useMemo(
-    () =>
-      Object.entries(citiesRaw)
-        .filter(([name]) => !zoneAliases[name])
-        .reduce((sum, [, info]) => sum + (info.pop ?? 0), 0),
-    [citiesRaw, zoneAliases],
-  );
 
   const cityDots = useMemo((): CityDot[] => {
     if (!dayData) return [];
@@ -214,9 +190,8 @@ function App() {
         stroked: true,
         pickable: true,
         transitions: {
-          // getRadius: { duration: playInterval, enter: () => [0] },
           getFillColor: {
-            duration: playInterval / 2,
+            duration: 400,
             enter: () => [0, 0, 0, 0],
           },
         },
@@ -225,63 +200,19 @@ function App() {
     [cityDots],
   );
 
-  // Advance one day every 200 ms while playing; stop at the last date
-  useEffect(() => {
-    if (!playing) return;
-    const id = setInterval(() => {
-      setDateIndex((i) => (i >= dates.length - 1 ? i : i + 1));
-    }, playInterval);
-    return () => clearInterval(id);
-  }, [playing, dates.length]);
-
-  // Auto-stop when the last date is reached
-  useEffect(() => {
-    if (playing && dateIndex >= dates.length - 1) setPlaying(false);
-  }, [playing, dateIndex, dates.length]);
-
-  const prev = useCallback(() => setDateIndex((i) => Math.max(0, i - 1)), []);
-  const next = useCallback(
-    () => setDateIndex((i) => Math.min(dates.length - 1, i + 1)),
-    [dates.length],
-  );
-
   if (booting) {
     return <div className="boot-screen">Loading data…</div>;
   }
 
-  const totalAlerts = dayData?.count ?? 0;
-  const totalCities = cityDots.length;
-  const totalPopulation = cityDots.reduce((sum, d) => sum + d.population, 0);
-  const maxAlertCount = cityDots.reduce(
-    (max, d) => Math.max(max, d.alertCount),
-    0,
-  );
-
   return (
     <div className="app">
-      <LegendPanel
+      <DateRangeBar
         dates={dates}
-        dateIndex={dateIndex}
-        currentDate={dayData?.day ?? null}
-        totalAlerts={totalAlerts}
-        totalCities={totalCities}
-        totalPopulation={totalPopulation}
-        maxAlertCount={maxAlertCount}
-        allCitiesCount={allCitiesCount}
-        allPopulation={allPopulation}
-        lang={lang}
-        playing={playing}
-        onPrev={prev}
-        onNext={next}
-        onSliderChange={setDateIndex}
-        onLangChange={setLang}
-        onPlayPause={() => {
-          setPlaying((p) => {
-            if (!p && dateIndex >= dates.length - 1) {
-              setDateIndex(Math.max(0, dates.length - 8));
-            }
-            return !p;
-          });
+        rangeA={rangeA}
+        rangeB={rangeB}
+        onChange={(a, b) => {
+          setRangeA(a);
+          setRangeB(b);
         }}
       />
 
@@ -292,7 +223,7 @@ function App() {
         layers={layers}
         style={{ width: "100%", height: "100%" }}
         pickingRadius={12}
-        getTooltip={({ object, x, y }) => buildTooltip(object, lang, x, y)}
+        getTooltip={({ object, x, y }) => buildTooltip(object, "en", x, y)}
       >
         <Map mapStyle={MAP_STYLE} attributionControl={{ compact: true }} />
       </DeckGL>
