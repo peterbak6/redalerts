@@ -50,6 +50,16 @@ jobs:
           git pull --rebase origin main
           git push
 
+      - name: Sync alert data to main2
+        if: github.event_name != 'push' && steps.diff.outputs.changed == 'true'
+        run: |
+          git fetch origin main2
+          git checkout main2
+          git checkout main -- public/red-alert/
+          git diff --cached --quiet || git commit -m "chore: sync red-alert data from main [$(date -u +%Y-%m-%d)]"
+          git push origin main2
+          git checkout main
+
       - name: Build
         if: github.event_name == 'push' || steps.diff.outputs.changed == 'true'
         run: npm run build

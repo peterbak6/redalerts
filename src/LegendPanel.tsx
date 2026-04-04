@@ -355,6 +355,16 @@ const LegendPanel = memo(function LegendPanel({
               VisualAnalytics
             </a>
           </p>
+          {/* v2 link — uncomment once redalerts2.pages.dev is live */}
+          {/* <a
+            className="data-source-link"
+            href="https://redalerts2.pages.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ opacity: 0.65 }}
+          >
+            {lang === "he" ? "גרסה חדשה →" : "New version →"}
+          </a> */}
         </div>
       )}
     </div>
