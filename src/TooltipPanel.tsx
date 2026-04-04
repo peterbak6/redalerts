@@ -43,7 +43,7 @@ export function buildTooltip(
     </div>`,
     style: {
       ...TOOLTIP_STYLE,
-      transform: `translate(${x}px, ${y}px)${onRight ? " translateX(-100%)" : ""}`,
+      transform: `translate(${x}px, ${y}px)${onRight ? " translate(-105%, -105%)" : " translate(5%, -105%)"}`,
     },
   };
 }

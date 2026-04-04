@@ -383,8 +383,8 @@ html, body, #root {
 /* Inner content classes: */
 .tt {
   font-family: 'Source Sans 3', 'Source Sans Pro', system-ui, sans-serif;
-  min-width: 180px;
-  max-width: 300px;
+  min-width: 100px;
+  /* max-width: 300px; */
 }
 .tt-name {
   font-size: var(--fs-title);
