@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import DeckGL from "@deck.gl/react";
-import { ScatterplotLayer } from "@deck.gl/layers";
+import { ColumnLayer } from "@deck.gl/layers";
 import { Map } from "@vis.gl/react-maplibre";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import DateRangeBar from "./DateRangeBar";
 import { buildTooltip, type CityDot } from "./TooltipPanel";
-import { BASE, MAP_STYLE, INITIAL_VIEW_STATE } from "./constants";
-import { alertColor, radiusFromPopulation, buildZoneAliases } from "./utils";
+import { BASE, MAP_STYLE, INITIAL_VIEW_STATE, ALERT_COLORS } from "./constants";
+import { radiusFromPopulation, buildZoneAliases } from "./utils";
 
 maplibregl.setRTLTextPlugin(
   `${window.location.origin}${import.meta.env.BASE_URL}mapbox-gl-rtl-text.js`,
@@ -40,19 +40,40 @@ async function fetchJson<T>(
   return res.json();
 }
 
+function elevationFromCount(count: number, maxCount: number): number {
+  if (!count || !maxCount) return 0;
+  // Normalize: tallest city = 5000m — visually strong but not overwhelming at 45° pitch
+  return (count / maxCount) * 5000;
+}
+
+function colorByAvg(
+  avg: number,
+  minAvg: number,
+  maxAvg: number,
+): [number, number, number, number] {
+  if (maxAvg <= minAvg)
+    return [...ALERT_COLORS[0], 210] as [number, number, number, number];
+  const t = (avg - minAvg) / (maxAvg - minAvg);
+  const idx = Math.min(
+    Math.floor(t * ALERT_COLORS.length),
+    ALERT_COLORS.length - 1,
+  );
+  return [...ALERT_COLORS[idx], 210] as [number, number, number, number];
+}
+
 // ─── App ─────────────────────────────────────────────────────────────────────
 function App() {
   const [dates, setDates] = useState<string[]>([]);
   const [rangeA, setRangeA] = useState(0);
   const [rangeB, setRangeB] = useState(0);
-  const [dayData, setDayData] = useState<DayData | null>(null);
+  const [rangeDays, setRangeDays] = useState<DayData[]>([]);
   const [citiesRaw, setCitiesRaw] = useState<Record<string, CityInfo>>({});
   const [booting, setBooting] = useState(true);
 
   const dayCache = useRef(new globalThis.Map<string, DayData>());
-  const latestRequestedDate = useRef<string>("");
-  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const fetchAbort = useRef<AbortController | null>(null);
+  const latestRangeKey = useRef<string>("");
+  const rangeDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rangeAbort = useRef<AbortController | null>(null);
 
   // Load dates first — unblocks the UI immediately; load cities in parallel
   useEffect(() => {
@@ -73,131 +94,120 @@ function App() {
       .catch(console.error);
   }, []);
 
-  // Fetch data for the "to" end of the selected range (visual mapping changes in next step).
-  // Debounced (80 ms) + stale-check so fast scrubbing skips intermediate days.
+  // Fetch all days in the selected range, cache individually, then aggregate.
+  // Debounced 300 ms so fast slider scrubbing doesn't fan out many requests.
   useEffect(() => {
     if (!dates.length) return;
-    const toIndex = Math.max(rangeA, rangeB);
-    const date = dates[toIndex];
-    // Cover the last 2 dates: Israel is UTC+2/+3 and the cron runs every 3h,
-    // so yesterday's file can still receive new alerts after local midnight.
-    const isLatest = toIndex >= dates.length - 2;
+    const from = Math.min(rangeA, rangeB);
+    const to = Math.max(rangeA, rangeB);
+    const rangeKey = `${from}-${to}`;
 
-    // Serve from cache immediately — no debounce needed.
-    // Skip for the latest date: its file is updated by cron and must stay fresh.
-    if (!isLatest && dayCache.current.has(date)) {
-      latestRequestedDate.current = date;
-      setDayData(dayCache.current.get(date)!);
-      return;
-    }
-
-    // Debounce the fetch so rapid slider movement skips intermediate requests
-    if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    debounceTimer.current = setTimeout(() => {
-      // Abort any previous in-flight request before starting a new one
-      fetchAbort.current?.abort();
+    if (rangeDebounce.current) clearTimeout(rangeDebounce.current);
+    rangeDebounce.current = setTimeout(async () => {
+      rangeAbort.current?.abort();
       const controller = new AbortController();
-      fetchAbort.current = controller;
+      rangeAbort.current = controller;
+      latestRangeKey.current = rangeKey;
 
-      latestRequestedDate.current = date;
-      // For the latest date, bypass both browser and CDN cache so we always
-      // get the most recent data (the file is rewritten by the cron job).
-      fetchJson<DayData>(
-        `${BASE}red-alert/${date}.json`,
-        controller.signal,
-        isLatest ? "no-cache" : undefined,
-      )
-        .then((data) => {
-          // Don't cache the latest date in memory — it changes throughout the day
-          if (!isLatest) dayCache.current.set(date, data);
-          // Ignore if the user has already moved to a different date
-          if (latestRequestedDate.current === date) setDayData(data);
-        })
-        .catch((err) => {
-          if (err?.name !== "AbortError") console.error(err);
-        });
-    }, 80);
+      const datesInRange = dates.slice(from, to + 1);
+      try {
+        const results = await Promise.all(
+          datesInRange.map(async (date, i) => {
+            const isLatest = from + i >= dates.length - 2;
+            if (!isLatest && dayCache.current.has(date))
+              return dayCache.current.get(date)!;
+            const data = await fetchJson<DayData>(
+              `${BASE}red-alert/${date}.json`,
+              controller.signal,
+              isLatest ? "no-cache" : undefined,
+            );
+            if (!isLatest) dayCache.current.set(date, data);
+            return data;
+          }),
+        );
+        if (latestRangeKey.current === rangeKey) setRangeDays(results);
+      } catch (err: unknown) {
+        if ((err as { name?: string })?.name !== "AbortError")
+          console.error(err);
+      }
+    }, 300);
   }, [rangeA, rangeB, dates]);
 
   // ── Zone alias map (computed once: maps sub-zone names → representative zone) ──
   const zoneAliases = useMemo(() => buildZoneAliases(citiesRaw), [citiesRaw]);
 
-  const cityDots = useMemo((): CityDot[] => {
-    if (!dayData) return [];
+  // ── Aggregate totals + averages across the selected range ──
+  const cityColumns = useMemo((): CityDot[] => {
+    if (!rangeDays.length || !Object.keys(citiesRaw).length) return [];
+    const numDays = rangeDays.length;
 
-    const timeFmt = new Intl.DateTimeFormat([], {
-      timeZone: "Asia/Jerusalem",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-
-    // Map each serialNumber to its formatted time (first occurrence wins)
-    const serialTime: Record<number, string> = {};
-    // Map each sub-zone to the set of serialNumbers that hit it
-    const rawSerials: Record<string, Set<number>> = {};
-    for (const alert of dayData.alerts) {
-      const t = timeFmt.format(new Date(alert.timestampIso));
-      if (!(alert.serialNumber in serialTime))
-        serialTime[alert.serialNumber] = t;
-      for (const city of alert.cities) {
-        if (!rawSerials[city]) rawSerials[city] = new Set();
-        rawSerials[city].add(alert.serialNumber);
+    // Sum distinct alert serials per representative city across all days
+    const totalAlertsPerCity: Record<string, number> = {};
+    for (const day of rangeDays) {
+      const rawSerials: Record<string, Set<number>> = {};
+      for (const alert of day.alerts) {
+        for (const city of alert.cities) {
+          if (!rawSerials[city]) rawSerials[city] = new Set();
+          rawSerials[city].add(alert.serialNumber);
+        }
+      }
+      const serialsByRep: Record<string, Set<number>> = {};
+      for (const [name, serials] of Object.entries(rawSerials)) {
+        const rep = zoneAliases[name] ?? name;
+        if (!serialsByRep[rep]) serialsByRep[rep] = new Set();
+        for (const s of serials) serialsByRep[rep].add(s);
+      }
+      for (const [rep, serials] of Object.entries(serialsByRep)) {
+        totalAlertsPerCity[rep] = (totalAlertsPerCity[rep] ?? 0) + serials.size;
       }
     }
 
-    // Aggregate into representatives: union serial sets across sub-zones
-    const serialsByRep: Record<string, Set<number>> = {};
-    for (const [name, serials] of Object.entries(rawSerials)) {
-      const rep = zoneAliases[name] ?? name;
-      if (!serialsByRep[rep]) serialsByRep[rep] = new Set();
-      for (const s of serials) serialsByRep[rep].add(s);
-    }
-
-    // count = distinct serial numbers; times = one entry per serial (sorted)
-    const counts: Record<string, number> = {};
-    const times: Record<string, string[]> = {};
-    for (const [rep, serials] of Object.entries(serialsByRep)) {
-      counts[rep] = serials.size;
-      times[rep] = [...new Set([...serials].map((s) => serialTime[s]))].sort();
-    }
-
     return Object.entries(citiesRaw)
-      .filter(([name]) => !zoneAliases[name]) // skip non-representative zones
+      .filter(([name]) => !zoneAliases[name])
       .map(([name, info]) => ({
         name,
         englishName: info.en ? info.en.split(" - ")[0] : name.split(" - ")[0],
         position: [info.lng, info.lat] as [number, number],
-        alertCount: counts[name] ?? 0,
+        totalAlerts: totalAlertsPerCity[name] ?? 0,
+        avgAlertsPerDay: (totalAlertsPerCity[name] ?? 0) / numDays,
         population: info.pop ?? 0,
-        times: times[name] ?? [],
       }))
-      .filter((d) => d.alertCount > 0);
-  }, [citiesRaw, zoneAliases, dayData]);
+      .filter((d) => d.totalAlerts > 0);
+  }, [citiesRaw, zoneAliases, rangeDays]);
+
+  const { minAvg, maxAvg, maxTotalAlerts } = useMemo(() => {
+    if (!cityColumns.length) return { minAvg: 0, maxAvg: 1, maxTotalAlerts: 1 };
+    const avgs = cityColumns.map((c) => c.avgAlertsPerDay);
+    return {
+      minAvg: Math.min(...avgs),
+      maxAvg: Math.max(...avgs),
+      maxTotalAlerts: Math.max(...cityColumns.map((c) => c.totalAlerts)),
+    };
+  }, [cityColumns]);
 
   // ── DeckGL layers ──
   const layers = useMemo(
     () => [
-      new ScatterplotLayer<CityDot>({
+      new ColumnLayer<CityDot>({
         id: "cities",
-        data: cityDots.sort((a, b) => a.alertCount - b.alertCount),
-        getPosition: (d) => [d.position[0], d.position[1], 1 / d.alertCount],
-        getRadius: (d) => radiusFromPopulation(d.population),
-        getFillColor: (d) => alertColor(d.alertCount),
-        getLineColor: [255, 255, 255],
-        getLineWidth: 1,
+        data: cityColumns,
+        getPosition: (d) => d.position,
+        getElevation: (d) => elevationFromCount(d.totalAlerts, maxTotalAlerts),
+        // getRadius is a valid ColumnLayer accessor in deck.gl 9.x; TS types are incomplete
+        ...{ getRadius: (d: CityDot) => radiusFromPopulation(d.population) },
+        getFillColor: (d) => colorByAvg(d.avgAlertsPerDay, minAvg, maxAvg),
         radiusUnits: "pixels",
-        stroked: true,
+        diskResolution: 32,
+        extruded: true,
+        material: false, // flat fill — no lighting shading on column sides
         pickable: true,
         transitions: {
-          getFillColor: {
-            duration: 400,
-            enter: () => [0, 0, 0, 0],
-          },
+          getElevation: { duration: 400, enter: () => [0] },
+          getFillColor: { duration: 400, enter: () => [0, 0, 0, 0] },
         },
       }),
     ],
-    [cityDots],
+    [cityColumns, minAvg, maxAvg, maxTotalAlerts],
   );
 
   if (booting) {
