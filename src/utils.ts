@@ -13,6 +13,26 @@ export const radiusFromPopulation = (pop: number): number => {
   return Math.min(30, Math.max(1, Math.sqrt(pop / 1000)));
 };
 
+export function elevationFromCount(count: number, maxCount: number): number {
+  if (!count || !maxCount) return 0;
+  return (count / maxCount) * 8000;
+}
+
+export function colorByAvg(
+  avg: number,
+  minAvg: number,
+  maxAvg: number,
+): [number, number, number, number] {
+  if (maxAvg <= minAvg)
+    return [...ALERT_COLORS[0], 210] as [number, number, number, number];
+  const t = (avg - minAvg) / (maxAvg - minAvg);
+  const idx = Math.min(
+    Math.floor(t * ALERT_COLORS.length),
+    ALERT_COLORS.length - 1,
+  );
+  return [...ALERT_COLORS[idx], 210] as [number, number, number, number];
+}
+
 /**
  * Detects multi-zone cities (names containing " - ") and returns a mapping
  * from every non-representative zone name → representative zone name.

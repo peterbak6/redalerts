@@ -1,8 +1,9 @@
-import { type Lang } from "./i18n";
+import { type Lang, T } from "./i18n";
 
 export type CityDot = {
   name: string;
   englishName: string;
+  hebrewName: string;
   position: [number, number];
   totalAlerts: number;
   avgAlertsPerDay: number;
@@ -23,20 +24,22 @@ const TOOLTIP_STYLE: Record<string, string> = {
 
 export function buildTooltip(
   object: unknown,
-  _lang: Lang,
+  lang: Lang,
   x = 0,
   y = 0,
 ): { html: string; style: Record<string, string> } | null {
   const d = object as CityDot | null;
   if (!d?.name || d.totalAlerts <= 0) return null;
 
+  const s = T[lang];
+  const displayName = lang === "he" ? d.hebrewName : d.englishName;
   const onRight = x > window.innerWidth / 2;
   return {
     html: `<div class="tt">
-      <div class="tt-name">${d.englishName}</div>
-      ${d.population > 0 ? `<div class="tt-row">Population: ${d.population.toLocaleString("en-US")}</div>` : ""}
-      <div class="tt-row">Total alerts: ${d.totalAlerts}</div>
-      <div class="tt-row">Avg / day: ${d.avgAlertsPerDay.toFixed(2)}</div>
+      <div class="tt-name">${displayName}</div>
+      ${d.population > 0 ? `<div class="tt-row">${s.tooltipPopulation(d.population)}</div>` : ""}
+      <div class="tt-row">${s.tooltipTotalAlerts(d.totalAlerts)}</div>
+      <div class="tt-row">${s.tooltipAvgPerDay(d.avgAlertsPerDay.toFixed(2))}</div>
     </div>`,
     style: {
       ...TOOLTIP_STYLE,

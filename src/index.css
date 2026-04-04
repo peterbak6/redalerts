@@ -30,6 +30,32 @@ html, body, #root {
   height: 100%;
 }
 
+/* ── Lang toggle ── */
+.lang-toggle {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+  background: rgba(8, 10, 22, 0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  user-select: none;
+}
+.lang-toggle:hover {
+  background: rgba(252, 78, 42, 0.25);
+  border-color: rgba(252, 78, 42, 0.6);
+}
+
 /* ── Boot screen ── */
 .boot-screen {
   display: flex;

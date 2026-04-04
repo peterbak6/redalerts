@@ -2,83 +2,25 @@ export type Lang = "he" | "en";
 
 export interface Strings {
   dir: "rtl" | "ltr";
-  title: string;
   langToggleLabel: string;
-  sliderDesc: string;
-  exposureTitle: string;
-  exposureDesc: string;
-  alerts: string;
-  cities: string;
-  people: string;
-  alertFreqTitle: string;
-  alertFreqDesc: string;
-  popSizeTitle: string;
-  popSizeDesc: string;
-  closingDesc: string;
-  tooltipAlerts: (n: number) => string;
+  tooltipTotalAlerts: (n: number) => string;
   tooltipPopulation: (n: number) => string;
-  tooltipTimesTitle: string;
-  dataSource: string;
-  playArrow: string;
-  prevArrow: string;
-  nextArrow: string;
+  tooltipAvgPerDay: (n: string) => string;
 }
 
 export const T: Record<Lang, Strings> = {
   he: {
     dir: "rtl",
     langToggleLabel: "EN",
-    title: "התראות צבע אדום",
-    sliderDesc:
-      "הזיזו את הסליידר כדי לעיין בהתראות לפי תאריך, כאשר ההתראות הופעלו. כל עיגול מייצג עיר שבה הופעלה התראה.",
-    exposureTitle: "חשיפה",
-    exposureDesc:
-      "מספר ההתראות ברחבי הארץ, ומספר היישובים והאוכלוסייה שבהם הופעלה לפחות התראה אחת",
-    alerts: "התראות",
-    cities: "ישובים",
-    people: "תושבים",
-    alertFreqTitle: "תדירות התראות",
-    alertFreqDesc:
-      "הצבע מציין כמה התראות נרשמו בכל עיר באותו יום. גוון אדום כהה יותר מצביע על מספר התראות גבוה יותר.",
-    popSizeTitle: "גודל אוכלוסייה",
-    popSizeDesc:
-      "גודל העיגול משקף את גודל האוכלוסייה בעיר. ערים גדולות מאגדות מספר אזורי התראה. עיגול גדול יותר מייצג אוכלוסייה גדולה יותר.",
-    closingDesc:
-      "ההדמיה מציגה כיצד ההתראות התפלגו בין ערים ואוכלוסיות לאורך זמן. היא מדגישה באיזו תדירות קהילות שונות הושפעו.",
-    tooltipAlerts: (n) => `התראות: ${n}`,
+    tooltipTotalAlerts: (n) => `סהכך התראות: ${n}`,
     tooltipPopulation: (n) => `אוכלוסייה: ${n.toLocaleString("he-IL")}`,
-    tooltipTimesTitle: "שעות",
-    dataSource: "מקור: צבע אדום",
-    playArrow: "◀", // triangle to the left
-    prevArrow: "→",
-    nextArrow: "←",
+    tooltipAvgPerDay: (n) => `מוצע ליום: ${n}`,
   },
   en: {
     dir: "ltr",
-    title: "Red Alerts",
     langToggleLabel: "עב",
-    sliderDesc:
-      "Move the slider to explore alerts by date, when alerts were triggered. Each circle marks a city where an alert was triggered.",
-    exposureTitle: "Exposure",
-    exposureDesc:
-      "Number of alerts across the country, and the number of places and population where at least one alert was triggered.",
-    alerts: "alerts",
-    cities: "cities",
-    people: "people",
-    alertFreqTitle: "Alert frequency",
-    alertFreqDesc:
-      "Color indicates how many alerts were recorded in each city on that day. Darker red color means more alerts, and more times the population had to run to shelter.",
-    popSizeTitle: "Population size",
-    popSizeDesc:
-      "Circle size reflects the city's population. Major cities are aggregates across multiple districts. Larger circles represent larger populations.",
-    closingDesc:
-      "This visualization shows how alerts were distributed across cities and populations over time. It highlights how often different communities were affected.",
-    tooltipAlerts: (n) => `Alerts: ${n}`,
+    tooltipTotalAlerts: (n) => `Total alerts: ${n}`,
     tooltipPopulation: (n) => `Population: ${n.toLocaleString("en-US")}`,
-    tooltipTimesTitle: "Times",
-    dataSource: "Data source: Tzeva Adom",
-    playArrow: "▶",
-    prevArrow: "←",
-    nextArrow: "→",
+    tooltipAvgPerDay: (n) => `Avg / day: ${n}`,
   },
 };

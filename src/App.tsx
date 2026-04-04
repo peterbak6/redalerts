@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState, useMemo } from "react";
-import DeckGL from "@deck.gl/react";
-import { ColumnLayer } from "@deck.gl/layers";
-import { Map } from "@vis.gl/react-maplibre";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import DateRangeBar from "./DateRangeBar";
-import { buildTooltip, type CityDot } from "./TooltipPanel";
-import { BASE, MAP_STYLE, INITIAL_VIEW_STATE, ALERT_COLORS } from "./constants";
+import MapView from "./MapView";
+import { type CityDot } from "./TooltipPanel";
+import { BASE } from "./constants";
 import { buildZoneAliases } from "./utils";
+import { type Lang, T } from "./i18n";
 
 maplibregl.setRTLTextPlugin(
   `${window.location.origin}${import.meta.env.BASE_URL}mapbox-gl-rtl-text.js`,
@@ -40,27 +39,6 @@ async function fetchJson<T>(
   return res.json();
 }
 
-function elevationFromCount(count: number, maxCount: number): number {
-  if (!count || !maxCount) return 0;
-  // sqrt scale compresses dynamic range; tallest city = 8000 m
-  return Math.sqrt(count / maxCount) * 8000;
-}
-
-function colorByAvg(
-  avg: number,
-  minAvg: number,
-  maxAvg: number,
-): [number, number, number, number] {
-  if (maxAvg <= minAvg)
-    return [...ALERT_COLORS[0], 210] as [number, number, number, number];
-  const t = (avg - minAvg) / (maxAvg - minAvg);
-  const idx = Math.min(
-    Math.floor(t * ALERT_COLORS.length),
-    ALERT_COLORS.length - 1,
-  );
-  return [...ALERT_COLORS[idx], 210] as [number, number, number, number];
-}
-
 // ─── App ─────────────────────────────────────────────────────────────────────
 function App() {
   const [dates, setDates] = useState<string[]>([]);
@@ -69,6 +47,7 @@ function App() {
   const [rangeDays, setRangeDays] = useState<DayData[]>([]);
   const [citiesRaw, setCitiesRaw] = useState<Record<string, CityInfo>>({});
   const [booting, setBooting] = useState(true);
+  const [lang, setLang] = useState<Lang>("en");
 
   const dayCache = useRef(new globalThis.Map<string, DayData>());
   const latestRangeKey = useRef<string>("");
@@ -172,61 +151,21 @@ function App() {
         avgAlertsPerDay: (totalAlertsPerCity[name] ?? 0) / numDays,
         population: info.pop ?? 0,
       }))
-      .filter((d) => d.totalAlerts > 0);
+      .filter((d) => d.totalAlerts > 0)
+      .map((d) => ({
+        ...d,
+        hebrewName: citiesRaw[d.name]?.he?.split(" - ")[0] ?? d.name,
+      }));
   }, [citiesRaw, zoneAliases, rangeDays]);
 
-  const { minAvg, maxAvg, maxTotalAlerts } = useMemo(() => {
-    if (!cityColumns.length) return { minAvg: 0, maxAvg: 1, maxTotalAlerts: 1 };
+  const { minAvg, maxAvg } = useMemo(() => {
+    if (!cityColumns.length) return { minAvg: 0, maxAvg: 1 };
     const avgs = cityColumns.map((c) => c.avgAlertsPerDay);
     return {
       minAvg: Math.min(...avgs),
       maxAvg: Math.max(...avgs),
-      maxTotalAlerts: Math.max(...cityColumns.map((c) => c.totalAlerts)),
     };
   }, [cityColumns]);
-
-  // ── DeckGL layers ──
-  // ColumnLayer has no per-instance getRadius, so we create 9 layers — one per
-  // population bin — each with a fixed radius. Bins are equal-width over sqrt(population).
-  // Max radius capped at 14px: larger values cause camera near-plane clipping
-  // when zoomed in because the geographic footprint of the cylinder becomes huge.
-  const NUM_BINS = 9;
-  const RADII_PX = [1, 2, 3, 4, 5, 7, 9, 11, 14]; // px, one per bin
-
-  const layers = useMemo(() => {
-    // Find max sqrt(pop) across all cities to define bin edges
-    const maxSqrtPop = cityColumns.reduce(
-      (m, d) => Math.max(m, Math.sqrt(d.population || 1)),
-      1,
-    );
-
-    return Array.from({ length: NUM_BINS }, (_, bin) => {
-      const lo = (bin / NUM_BINS) * maxSqrtPop;
-      const hi = ((bin + 1) / NUM_BINS) * maxSqrtPop;
-      const binData = cityColumns.filter((d) => {
-        const s = Math.sqrt(d.population || 1);
-        // last bin is inclusive on both ends
-        return bin === NUM_BINS - 1 ? s >= lo : s >= lo && s < hi;
-      });
-      return new ColumnLayer<CityDot>({
-        id: `cities-bin-${bin}`,
-        data: binData,
-        getPosition: (d) => d.position,
-        getElevation: (d) => elevationFromCount(d.totalAlerts, maxTotalAlerts),
-        radius: RADII_PX[bin],
-        radiusUnits: "pixels",
-        getFillColor: (d) => colorByAvg(d.avgAlertsPerDay, minAvg, maxAvg),
-        diskResolution: 32,
-        extruded: true,
-        material: false,
-        pickable: true,
-        transitions: {
-          getElevation: { duration: 400, enter: () => [0] },
-          getFillColor: { duration: 400, enter: () => [0, 0, 0, 0] },
-        },
-      });
-    });
-  }, [cityColumns, minAvg, maxAvg, maxTotalAlerts]);
 
   if (booting) {
     return <div className="boot-screen">Loading data…</div>;
@@ -244,17 +183,18 @@ function App() {
         }}
       />
 
-      {/* ── Map ── */}
-      <DeckGL
-        initialViewState={INITIAL_VIEW_STATE}
-        controller
-        layers={layers}
-        style={{ width: "100%", height: "100%" }}
-        pickingRadius={12}
-        getTooltip={({ object, x, y }) => buildTooltip(object, "en", x, y)}
+      <button
+        className="lang-toggle"
+        onClick={() => setLang((l) => (l === "en" ? "he" : "en"))}
       >
-        <Map mapStyle={MAP_STYLE} attributionControl={{ compact: true }} />
-      </DeckGL>
+        {T[lang].langToggleLabel}
+      </button>
+      <MapView
+        cityColumns={cityColumns}
+        minAvg={minAvg}
+        maxAvg={maxAvg}
+        lang={lang}
+      />
     </div>
   );
 }
