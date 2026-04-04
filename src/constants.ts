@@ -19,8 +19,8 @@ export const INITIAL_VIEW_STATE = {
   longitude: 35.1,
   latitude: 31.9,
   zoom: 7.2,
-  pitch: 0,
+  pitch: 45,
   bearing: 0,
-  minPitch: 0, // Prevent tilting up
-  maxPitch: 0, // Prevent tilting down
+  minPitch: 0,
+  maxPitch: 60,
 };
