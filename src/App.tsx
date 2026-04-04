@@ -7,7 +7,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import DateRangeBar from "./DateRangeBar";
 import { buildTooltip, type CityDot } from "./TooltipPanel";
 import { BASE, MAP_STYLE, INITIAL_VIEW_STATE, ALERT_COLORS } from "./constants";
-import { radiusFromPopulation, buildZoneAliases } from "./utils";
+import { buildZoneAliases } from "./utils";
 
 maplibregl.setRTLTextPlugin(
   `${window.location.origin}${import.meta.env.BASE_URL}mapbox-gl-rtl-text.js`,
@@ -42,8 +42,8 @@ async function fetchJson<T>(
 
 function elevationFromCount(count: number, maxCount: number): number {
   if (!count || !maxCount) return 0;
-  // Normalize: tallest city = 5000m — visually strong but not overwhelming at 45° pitch
-  return (count / maxCount) * 5000;
+  // sqrt scale compresses dynamic range; tallest city = 8000 m
+  return Math.sqrt(count / maxCount) * 8000;
 }
 
 function colorByAvg(
@@ -186,29 +186,47 @@ function App() {
   }, [cityColumns]);
 
   // ── DeckGL layers ──
-  const layers = useMemo(
-    () => [
-      new ColumnLayer<CityDot>({
-        id: "cities",
-        data: cityColumns,
+  // ColumnLayer has no per-instance getRadius, so we create 9 layers — one per
+  // population bin — each with a fixed radius. Bins are equal-width over sqrt(population).
+  // Max radius capped at 14px: larger values cause camera near-plane clipping
+  // when zoomed in because the geographic footprint of the cylinder becomes huge.
+  const NUM_BINS = 9;
+  const RADII_PX = [1, 2, 3, 4, 5, 7, 9, 11, 14]; // px, one per bin
+
+  const layers = useMemo(() => {
+    // Find max sqrt(pop) across all cities to define bin edges
+    const maxSqrtPop = cityColumns.reduce(
+      (m, d) => Math.max(m, Math.sqrt(d.population || 1)),
+      1,
+    );
+
+    return Array.from({ length: NUM_BINS }, (_, bin) => {
+      const lo = (bin / NUM_BINS) * maxSqrtPop;
+      const hi = ((bin + 1) / NUM_BINS) * maxSqrtPop;
+      const binData = cityColumns.filter((d) => {
+        const s = Math.sqrt(d.population || 1);
+        // last bin is inclusive on both ends
+        return bin === NUM_BINS - 1 ? s >= lo : s >= lo && s < hi;
+      });
+      return new ColumnLayer<CityDot>({
+        id: `cities-bin-${bin}`,
+        data: binData,
         getPosition: (d) => d.position,
         getElevation: (d) => elevationFromCount(d.totalAlerts, maxTotalAlerts),
-        // getRadius is a valid ColumnLayer accessor in deck.gl 9.x; TS types are incomplete
-        ...{ getRadius: (d: CityDot) => radiusFromPopulation(d.population) },
-        getFillColor: (d) => colorByAvg(d.avgAlertsPerDay, minAvg, maxAvg),
+        radius: RADII_PX[bin],
         radiusUnits: "pixels",
+        getFillColor: (d) => colorByAvg(d.avgAlertsPerDay, minAvg, maxAvg),
         diskResolution: 32,
         extruded: true,
-        material: false, // flat fill — no lighting shading on column sides
+        material: false,
         pickable: true,
         transitions: {
           getElevation: { duration: 400, enter: () => [0] },
           getFillColor: { duration: 400, enter: () => [0, 0, 0, 0] },
         },
-      }),
-    ],
-    [cityColumns, minAvg, maxAvg, maxTotalAlerts],
-  );
+      });
+    });
+  }, [cityColumns, minAvg, maxAvg, maxTotalAlerts]);
 
   if (booting) {
     return <div className="boot-screen">Loading data…</div>;
